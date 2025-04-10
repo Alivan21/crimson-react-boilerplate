@@ -1,9 +1,10 @@
 {
-  "name": "react-app-router-sandbox",
+  "name": "crimson-react-boilerplate",
+  "version": "0.0.1",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "eslint . --fix && tsc -b react-router build",
+    "build": "eslint . --fix && react-router typegen && tsc -b react-router build",
     "dev": "react-router dev",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc",

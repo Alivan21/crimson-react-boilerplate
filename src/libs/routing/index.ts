@@ -3,6 +3,14 @@ import path from "path";
 import { type RouteConfigEntry, route, layout, index } from "@react-router/dev/routes";
 
 /**
+ * Normalizes a path to use forward slashes consistently
+ * regardless of the operating system.
+ */
+function normalizePath(filePath: string): string {
+  return filePath.split(path.sep).join("/");
+}
+
+/**
  * Represents a node in the route tree structure.
  */
 type RouteNode = {
@@ -82,9 +90,11 @@ async function buildRouteTreeAsync(currentPath: string, relativePath: string): P
     pathSegment = "";
   }
 
+  const relativePathSegment = path.join(relativePath, basename);
+
   const node: RouteNode = {
     path: pathSegment,
-    relativePath: path.join(relativePath, basename),
+    relativePath: normalizePath(relativePathSegment),
     isDirectory: stats.isDirectory(),
     isLayout: false,
     isPage: false,
@@ -108,7 +118,7 @@ async function buildRouteTreeAsync(currentPath: string, relativePath: string): P
         const fileStats = await fs.promises.stat(filePath);
 
         if (fileStats.isDirectory()) {
-          return buildRouteTreeAsync(filePath, path.join(relativePath, basename));
+          return buildRouteTreeAsync(filePath, normalizePath(path.join(relativePath, basename)));
         }
         return null;
       });
@@ -146,7 +156,7 @@ function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteCon
   }
 
   if (node.isPage) {
-    const componentPath = `${node.relativePath}/page.tsx`;
+    const componentPath = normalizePath(`${node.relativePath}/page.tsx`);
 
     if (currentPath === "") {
       routes.push(index(componentPath));
@@ -156,7 +166,7 @@ function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteCon
   }
 
   if (node.isLayout) {
-    const layoutPath = `${node.relativePath}/layout.tsx`;
+    const layoutPath = normalizePath(`${node.relativePath}/layout.tsx`);
     const childRoutes = node.children.flatMap((child) => convertTreeToRoutes(child, currentPath));
 
     if (childRoutes.length > 0) {
