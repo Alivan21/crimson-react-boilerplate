@@ -48,7 +48,7 @@ type RouteNode = {
  * @param {string} appDir - Directory containing the app router files, relative to src/
  * @returns {Promise<RouteConfigEntry[]>} Array of React Router route configurations
  */
-export async function nextJsStyleRoutes(appDir: string = "app"): Promise<RouteConfigEntry[]> {
+export async function appRouter(appDir: string = "app"): Promise<RouteConfigEntry[]> {
   const rootDir = path.resolve(process.cwd(), "src", appDir);
 
   try {
