@@ -1,3 +1,4 @@
+import { useFetcher } from "react-router";
 import type { Route } from "./+types/page";
 import logoDark from "/logo-dark.svg";
 import logoLight from "/logo-light.svg";
@@ -11,6 +12,16 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+  const logoutFetcher = useFetcher();
+
+  const handleLogout = async () => {
+    await logoutFetcher.submit(null, {
+      method: "post",
+      action: "/logout",
+    });
+    console.log("Logout successful");
+  };
+
   const resources = [
     {
       href: "https://reactrouter.com/docs",
@@ -83,6 +94,15 @@ export default function Home() {
             </ul>
           </nav>
         </div>
+
+        <button
+          className="cursor-pointer rounded-full bg-blue-700 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400"
+          disabled={logoutFetcher.state !== "idle"}
+          onClick={() => void handleLogout()}
+          type="button"
+        >
+          {logoutFetcher.state !== "idle" ? "Logging out..." : "Logout"}
+        </button>
       </div>
     </main>
   );

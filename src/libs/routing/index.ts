@@ -108,7 +108,7 @@ async function buildRouteTreeAsync(currentPath: string, relativePath: string): P
     const files = await fs.promises.readdir(currentPath);
 
     node.isLayout = files.includes("layout.tsx");
-    node.isPage = files.includes("page.tsx");
+    node.isPage = files.includes("page.tsx") || files.includes("route.ts");
 
     // Process directories in parallel with Promise.all
     const childPromises = files
@@ -156,7 +156,12 @@ function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteCon
   }
 
   if (node.isPage) {
-    const componentPath = normalizePath(`${node.relativePath}/page.tsx`);
+    const files = fs.readdirSync(path.join(process.cwd(), "src", node.relativePath));
+    const hasPage = files.includes("page.tsx");
+
+    const componentPath = normalizePath(
+      `${node.relativePath}/${hasPage ? "page.tsx" : "route.ts"}`,
+    );
 
     if (currentPath === "") {
       routes.push(index(componentPath));
