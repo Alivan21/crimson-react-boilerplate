@@ -85,5 +85,5 @@ export default tseslint.config(
         version: "detect",
       },
     },
-  }
+  },
 );
