@@ -42,24 +42,27 @@ type RouteNode = {
  */
 export async function nextJsStyleRoutes(appDir: string = "app"): Promise<RouteConfigEntry[]> {
   const rootDir = path.resolve(process.cwd(), "src", appDir);
-  if (!fs.existsSync(rootDir)) {
+
+  try {
+    await fs.promises.access(rootDir);
+  } catch {
     console.warn(`Directory ${rootDir} does not exist. Creating empty routes.`);
     return [];
   }
 
-  const routeTree = buildRouteTree(rootDir, "");
+  const routeTree = await buildRouteTreeAsync(rootDir, "");
   return convertTreeToRoutes(routeTree);
 }
 
 /**
- * Recursively builds a route tree by scanning the directory structure.
+ * Recursively builds a route tree by scanning the directory structure asynchronously.
  *
  * @param {string} currentPath - Absolute filesystem path to current directory
  * @param {string} relativePath - Path relative to the app directory
- * @returns {RouteNode} Route tree node representing current directory
+ * @returns {Promise<RouteNode>} Route tree node representing current directory
  */
-function buildRouteTree(currentPath: string, relativePath: string): RouteNode {
-  const stats = fs.statSync(currentPath);
+async function buildRouteTreeAsync(currentPath: string, relativePath: string): Promise<RouteNode> {
+  const stats = await fs.promises.stat(currentPath);
   const basename = path.basename(currentPath);
 
   const isDynamicSegment =
@@ -92,22 +95,29 @@ function buildRouteTree(currentPath: string, relativePath: string): RouteNode {
   };
 
   if (stats.isDirectory()) {
-    const files = fs.readdirSync(currentPath);
+    const files = await fs.promises.readdir(currentPath);
 
     node.isLayout = files.includes("layout.tsx");
     node.isPage = files.includes("page.tsx");
 
-    for (const file of files) {
-      const filePath = path.join(currentPath, file);
-      const fileStats = fs.statSync(filePath);
+    // Process directories in parallel with Promise.all
+    const childPromises = files
+      .filter((file) => file !== "page.tsx" && file !== "layout.tsx")
+      .map(async (file) => {
+        const filePath = path.join(currentPath, file);
+        const fileStats = await fs.promises.stat(filePath);
 
-      if (file === "page.tsx" || file === "layout.tsx") continue;
+        if (fileStats.isDirectory()) {
+          return buildRouteTreeAsync(filePath, path.join(relativePath, basename));
+        }
+        return null;
+      });
 
-      if (fileStats.isDirectory()) {
-        const childNode = buildRouteTree(filePath, path.join(relativePath, basename));
-        node.children.push(childNode);
-      }
-    }
+    // Wait for all child directories to be processed
+    const childNodes = await Promise.all(childPromises);
+
+    // Filter out null values (files that weren't directories)
+    node.children = childNodes.filter((child): child is RouteNode => child !== null);
   }
 
   return node;
@@ -131,8 +141,8 @@ function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteCon
       node.isGrouping || !node.path
         ? parentPath
         : parentPath
-        ? `${parentPath}/${node.path}`
-        : node.path;
+          ? `${parentPath}/${node.path}`
+          : node.path;
   }
 
   if (node.isPage) {
