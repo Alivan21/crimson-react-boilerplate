@@ -1,4 +1,4 @@
-import type { Route } from "./+types/home";
+import type { Route } from "./+types/page";
 import logoDark from "/logo-dark.svg";
 import logoLight from "/logo-light.svg";
 
