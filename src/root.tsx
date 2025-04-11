@@ -8,6 +8,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import type { Route } from "./+types/root";
+import { SessionProvider } from "./components/providers/sessions";
 import TanstackProvider from "./libs/tanstack-query/providers";
 import "./app.css";
 
@@ -51,10 +52,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <TanstackProvider>
-      <Outlet />
-      <Toaster position="top-center" />
-    </TanstackProvider>
+    <SessionProvider>
+      <TanstackProvider>
+        <Outlet />
+        <Toaster position="top-center" />
+      </TanstackProvider>
+    </SessionProvider>
   );
 }
 
