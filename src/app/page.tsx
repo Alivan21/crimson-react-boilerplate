@@ -1,5 +1,7 @@
 import { useFetcher } from "react-router";
+import { useEffect } from "react";
 import type { Route } from "./+types/page";
+import type { loader as sessionLoader } from "./api/session/route";
 import logoDark from "/logo-dark.svg";
 import logoLight from "/logo-light.svg";
 
@@ -13,11 +15,21 @@ export function meta({}: Route.MetaArgs) {
 
 export default function Home() {
   const logoutFetcher = useFetcher();
+  const session = useFetcher<typeof sessionLoader>();
+
+  useEffect(() => {
+    if (session.state === "idle" && !session.data) {
+      console.log("Component mounted - loading session data");
+      void session.load("/api/session");
+    } else if (session.data) {
+      console.log("Session data loaded:", session.data);
+    }
+  }, [session]);
 
   const handleLogout = async () => {
     await logoutFetcher.submit(null, {
       method: "post",
-      action: "/logout",
+      action: "/api/session",
     });
     console.log("Logout successful");
   };
@@ -63,8 +75,15 @@ export default function Home() {
       ),
     },
   ];
+
   return (
     <main className="flex items-center justify-center pt-16 pb-4">
+      {session.state !== "idle" && (
+        <div className="absolute top-4 right-4 text-blue-700 dark:text-blue-500">
+          Loading session data...
+        </div>
+      )}
+
       <div className="flex min-h-0 flex-1 flex-col items-center gap-16">
         <header className="flex flex-col items-center gap-9">
           <div className="w-[500px] max-w-[100vw] p-4">
