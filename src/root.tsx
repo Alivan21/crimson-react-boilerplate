@@ -1,3 +1,4 @@
+import { Toaster } from "react-hot-toast";
 import {
   isRouteErrorResponse,
   Links,
@@ -7,6 +8,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import type { Route } from "./+types/root";
+import TanstackProvider from "./libs/tanstack-query/providers";
 import "./app.css";
 
 export function meta() {
@@ -48,7 +50,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />;
+  return (
+    <TanstackProvider>
+      <Outlet />
+      <Toaster position="top-center" />
+    </TanstackProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

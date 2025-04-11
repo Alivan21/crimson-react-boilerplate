@@ -3,6 +3,7 @@ import { serverEnv } from "../env";
 
 type SessionData = {
   userId: string;
+  token: string;
 };
 
 type SessionFlashData = {
