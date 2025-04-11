@@ -1,9 +1,9 @@
+import { useSession } from "~/components/providers/sessions";
 import logoDark from "/image/logo-dark.svg";
 import logoLight from "/image/logo-light.svg";
-import { useSession } from "~/components/providers/sessions";
 
 export default function Home() {
-  const { logout } = useSession();
+  const { signOut } = useSession();
 
   const resources = [
     {
@@ -81,7 +81,7 @@ export default function Home() {
 
         <button
           className="cursor-pointer rounded-full bg-blue-700 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400"
-          onClick={() => void logout()}
+          onClick={() => void signOut()}
           type="button"
         >
           Logout

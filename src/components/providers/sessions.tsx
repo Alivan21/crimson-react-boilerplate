@@ -14,8 +14,8 @@ type SessionContextType = {
   user: UserData | null;
   token: string | null;
   isLoading: boolean;
-  login: (credential: TLoginRequest) => Promise<void>;
-  logout: () => Promise<void>;
+  signIn: (credential: TLoginRequest) => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const SessionContext = React.createContext<SessionContextType | null>(null);
@@ -62,14 +62,14 @@ export function SessionProvider({ children }: SessionProviderProps) {
       }
     };
     void initializeAuth();
-  }, [session]);
+  }, [session.data?.token]);
 
   const handleLogin = async (credential: TLoginRequest) => {
     try {
       setIsLoading(true);
       const response = await login(credential);
       const { token } = response.data;
-      console.log("Login response:", response);
+
       await fetcher.submit(
         {
           token: token,
@@ -121,8 +121,8 @@ export function SessionProvider({ children }: SessionProviderProps) {
       isAuthenticated,
       user,
       token,
-      login: handleLogin,
-      logout: handleLogout,
+      signIn: handleLogin,
+      signOut: handleLogout,
       isLoading,
     }),
     [isAuthenticated, user, token, isLoading],

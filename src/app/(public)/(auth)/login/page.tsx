@@ -10,7 +10,7 @@ import LoginForm from "./_components/form";
 
 export default function LoginPage() {
   const navigate = useNavigate();
-  const { login } = useSession();
+  const { signIn } = useSession();
 
   const form = useForm<TLoginRequest>({
     resolver: zodResolver(loginSchema),
@@ -22,7 +22,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (data: TLoginRequest) => {
     try {
-      await login(data);
+      await signIn(data);
       toast.success("Login successful");
       void navigate("/", { replace: true });
     } catch (error: unknown) {
