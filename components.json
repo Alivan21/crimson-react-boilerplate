@@ -14,7 +14,7 @@
     "components": "~/components",
     "utils": "~/libs/clsx",
     "ui": "~/components/ui",
-    "lib": "~/libs/clsx",
+    "lib": "~/libs",
     "hooks": "~/hooks/shared"
   },
   "iconLibrary": "lucide"
