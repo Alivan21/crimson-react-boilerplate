@@ -1,17 +1,8 @@
 import { useFetcher } from "react-router";
 import { useEffect } from "react";
-import type { Route } from "./+types/page";
 import type { loader as sessionLoader } from "./api/session/route";
 import logoDark from "/logo-dark.svg";
 import logoLight from "/logo-light.svg";
-
-// eslint-disable-next-line no-empty-pattern
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
-}
 
 export default function Home() {
   const logoutFetcher = useFetcher();

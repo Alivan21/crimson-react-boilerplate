@@ -86,4 +86,10 @@ export default tseslint.config(
       },
     },
   },
+  {
+    files: ["**/route.ts"],
+    rules: {
+      "@typescript-eslint/only-throw-error": "off",
+    },
+  },
 );

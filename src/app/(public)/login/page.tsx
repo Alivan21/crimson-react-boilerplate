@@ -7,7 +7,6 @@ export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
 
   if (session.has("userId")) {
-    // Redirect to the home page if they are already signed in.
     return redirect("/");
   }
 
@@ -31,7 +30,6 @@ export async function action({ request }: Route.ActionArgs) {
 
   session.set("userId", userId);
 
-  // Login succeeded, send them to the home page.
   return redirect("/", {
     headers: {
       "Set-Cookie": await commitSession(session),
