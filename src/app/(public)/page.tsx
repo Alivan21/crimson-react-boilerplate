@@ -4,7 +4,6 @@ import logoLight from "/image/logo-light.svg";
 
 export default function Home() {
   const { signOut } = useSession();
-
   const resources = [
     {
       href: "https://reactrouter.com/docs",

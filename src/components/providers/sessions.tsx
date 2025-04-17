@@ -1,11 +1,10 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React from "react";
 import toast from "react-hot-toast";
-import { useFetcher } from "react-router";
 import { login, logout } from "~/api/auth";
 import type { TLoginRequest } from "~/api/auth/schema";
-import type { loader as sessionLoader } from "~/app/api/session/route";
 import type { UserData } from "~/common/types/user-data";
+import { useSessionCookies } from "~/hooks/shared/use-session-cookies";
 import { httpClient } from "~/libs/axios";
 import { decodeJwt } from "~/utils/jwt";
 
@@ -25,8 +24,13 @@ type SessionProviderProps = {
 };
 
 export function SessionProvider({ children }: SessionProviderProps) {
-  const session = useFetcher<typeof sessionLoader>();
-  const fetcher = useFetcher();
+  const {
+    sessionData,
+    isLoading: cookieLoading,
+    getSessionData,
+    createSession,
+    destroySession,
+  } = useSessionCookies();
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
   const [user, setUser] = React.useState<UserData | null>(null);
   const [token, setToken] = React.useState<string | null>(null);
@@ -34,12 +38,11 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   React.useEffect(() => {
     const initializeAuth = async () => {
-      let storedToken = null;
-      if (!session.data) {
+      if (!sessionData) {
         setIsLoading(true);
-        void session.load("/api/session");
-      } else if (session.data) {
-        storedToken = session.data.token;
+        await getSessionData();
+      } else {
+        const storedToken = sessionData.token;
         if (storedToken) {
           httpClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
           const userData = decodeJwt<UserData>(storedToken);
@@ -49,10 +52,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
             setIsAuthenticated(true);
           }
         } else {
-          await fetcher.submit(null, {
-            method: "post",
-            action: "/api/session",
-          });
+          await destroySession();
           setIsAuthenticated(false);
           setUser(null);
           setToken(null);
@@ -62,7 +62,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
       }
     };
     void initializeAuth();
-  }, [session.data?.token]);
+  }, [sessionData?.token]);
 
   const handleLogin = async (credential: TLoginRequest) => {
     try {
@@ -70,15 +70,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
       const response = await login(credential);
       const { token } = response.data;
 
-      await fetcher.submit(
-        {
-          token: token,
-        },
-        {
-          method: "post",
-          action: "/api/login",
-        },
-      );
+      await createSession(token);
       httpClient.defaults.headers.common.Authorization = `Bearer ${token}`;
       setToken(token);
       setUser(decodeJwt<UserData>(token));
@@ -97,13 +89,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const handleLogout = async () => {
     try {
       setIsLoading(true);
-      await Promise.all([
-        fetcher.submit(null, {
-          method: "post",
-          action: "/api/session",
-        }),
-        logout(),
-      ]);
+      await Promise.all([destroySession(), logout()]);
       httpClient.defaults.headers.common.Authorization = undefined;
       setIsAuthenticated(false);
       setUser(null);
@@ -123,9 +109,9 @@ export function SessionProvider({ children }: SessionProviderProps) {
       token,
       signIn: handleLogin,
       signOut: handleLogout,
-      isLoading,
+      isLoading: isLoading || cookieLoading,
     }),
-    [isAuthenticated, user, token, isLoading],
+    [isAuthenticated, user, token, isLoading, cookieLoading],
   );
 
   return <SessionContext.Provider value={contextValue}>{children}</SessionContext.Provider>;
