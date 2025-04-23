@@ -44,13 +44,11 @@ export function SessionProvider({ children }: SessionProviderProps) {
       } else {
         const storedToken = sessionData.token;
         if (storedToken) {
-          httpClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
           const userData = decodeJwt<UserData>(storedToken);
-          if (userData) {
-            setToken(storedToken);
-            setUser(userData);
-            setIsAuthenticated(true);
-          }
+          httpClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+          setToken(storedToken);
+          setUser(userData);
+          setIsAuthenticated(true);
         } else {
           await destroySession();
           setIsAuthenticated(false);
@@ -67,20 +65,19 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const handleLogin = async (credential: TLoginRequest) => {
     try {
       setIsLoading(true);
-      const response = await login(credential);
-      const { token } = response.data;
-
-      await createSession(token);
-      httpClient.defaults.headers.common.Authorization = `Bearer ${token}`;
-      setToken(token);
-      setUser(decodeJwt<UserData>(token));
-      setIsAuthenticated(true);
+      const { data } = await login(credential);
+      if (data.token) {
+        await createSession(data.token);
+        httpClient.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+        setToken(data.token);
+        setUser(decodeJwt<UserData>(data.token));
+        setIsAuthenticated(true);
+      }
     } catch (error) {
       setIsAuthenticated(false);
       setUser(null);
       setToken(null);
-      toast.error("Login failed. Please try again.");
-      console.error("Login failed:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +91,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
       setIsAuthenticated(false);
       setUser(null);
       setToken(null);
+      toast.success("Logout successful");
     } catch (error) {
       toast.error("Logout failed. Please try again.");
       console.error("Logout failed:", error);

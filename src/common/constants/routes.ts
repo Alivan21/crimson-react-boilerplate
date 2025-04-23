@@ -1,4 +1,7 @@
 export const ROUTES = {
+  AUTH: {
+    LOGIN: "/login",
+  },
   DASHBOARD: "/dashboard",
   USERS: {
     LIST: "/users",

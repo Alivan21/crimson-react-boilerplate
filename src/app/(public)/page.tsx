@@ -1,9 +1,12 @@
+import { Link } from "react-router";
+import { ROUTES } from "~/common/constants/routes";
 import { useSession } from "~/components/providers/sessions";
 import logoDark from "/image/logo-dark.svg";
 import logoLight from "/image/logo-light.svg";
+import { Button } from "~/components/ui/button";
 
 export default function Home() {
-  const { signOut } = useSession();
+  const { signOut, isAuthenticated, isLoading } = useSession();
   const resources = [
     {
       href: "https://reactrouter.com/docs",
@@ -77,14 +80,21 @@ export default function Home() {
             </ul>
           </nav>
         </div>
-
-        <button
-          className="cursor-pointer rounded-full bg-blue-700 px-4 py-2 text-white transition-colors duration-200 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400"
-          onClick={() => void signOut()}
-          type="button"
-        >
-          Logout
-        </button>
+        {isAuthenticated ? (
+          <Button
+            className="cursor-pointer"
+            disabled={isLoading}
+            onClick={() => void signOut()}
+            type="button"
+            variant="destructive"
+          >
+            Logout
+          </Button>
+        ) : (
+          <Button asChild className="cursor-pointer">
+            <Link to={ROUTES.AUTH.LOGIN}>Login</Link>
+          </Button>
+        )}
       </div>
     </main>
   );
