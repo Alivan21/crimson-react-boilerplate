@@ -38,17 +38,17 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
   React.useEffect(() => {
     const initializeAuth = async () => {
+      setIsLoading(true);
       if (!sessionData) {
-        setIsLoading(true);
         await getSessionData();
       } else {
         const storedToken = sessionData.token;
         if (storedToken) {
           const userData = decodeJwt<UserData>(storedToken);
           httpClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
+          setIsAuthenticated(true);
           setToken(storedToken);
           setUser(userData);
-          setIsAuthenticated(true);
         } else {
           await destroySession();
           setIsAuthenticated(false);
@@ -56,8 +56,8 @@ export function SessionProvider({ children }: SessionProviderProps) {
           setToken(null);
           httpClient.defaults.headers.common.Authorization = undefined;
         }
-        setIsLoading(false);
       }
+      setIsLoading(false);
     };
     void initializeAuth();
   }, [sessionData?.token]);
@@ -69,9 +69,9 @@ export function SessionProvider({ children }: SessionProviderProps) {
       if (data.token) {
         await createSession(data.token);
         httpClient.defaults.headers.common.Authorization = `Bearer ${data.token}`;
+        setIsAuthenticated(true);
         setToken(data.token);
         setUser(decodeJwt<UserData>(data.token));
-        setIsAuthenticated(true);
       }
     } catch (error) {
       setIsAuthenticated(false);

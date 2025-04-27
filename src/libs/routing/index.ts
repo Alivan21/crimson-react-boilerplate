@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { type RouteConfigEntry, route, layout, index } from "@react-router/dev/routes";
+import { type RouteConfigEntry, route, layout } from "@react-router/dev/routes";
 
 /**
  * Normalizes a path to use forward slashes consistently
@@ -91,10 +91,11 @@ async function buildRouteTreeAsync(currentPath: string, relativePath: string): P
   }
 
   const relativePathSegment = path.join(relativePath, basename);
+  const nodeRelativePath = normalizePath(relativePathSegment);
 
   const node: RouteNode = {
     path: pathSegment,
-    relativePath: normalizePath(relativePathSegment),
+    relativePath: nodeRelativePath,
     isDirectory: stats.isDirectory(),
     isLayout: false,
     isPage: false,
@@ -106,28 +107,30 @@ async function buildRouteTreeAsync(currentPath: string, relativePath: string): P
 
   if (stats.isDirectory()) {
     const files = await fs.promises.readdir(currentPath);
+    files.sort();
 
     node.isLayout = files.includes("layout.tsx");
     node.isPage = files.includes("page.tsx") || files.includes("route.ts");
 
-    // Process directories in parallel with Promise.all
     const childPromises = files
-      .filter((file) => file !== "page.tsx" && file !== "layout.tsx")
+      .filter((file) => !["page.tsx", "layout.tsx", "route.ts"].includes(file))
       .map(async (file) => {
         const filePath = path.join(currentPath, file);
-        const fileStats = await fs.promises.stat(filePath);
-
-        if (fileStats.isDirectory()) {
-          return buildRouteTreeAsync(filePath, normalizePath(path.join(relativePath, basename)));
+        try {
+          const fileStats = await fs.promises.stat(filePath);
+          if (fileStats.isDirectory()) {
+            return buildRouteTreeAsync(filePath, nodeRelativePath);
+          }
+        } catch (err) {
+          console.error(`Error stating file ${filePath}:`, err);
         }
         return null;
       });
 
-    // Wait for all child directories to be processed
-    const childNodes = await Promise.all(childPromises);
-
-    // Filter out null values (files that weren't directories)
-    node.children = childNodes.filter((child): child is RouteNode => child !== null);
+    const childNodes = (await Promise.all(childPromises)).filter(
+      (child): child is RouteNode => child !== null,
+    );
+    node.children = childNodes;
   }
 
   return node;
@@ -143,44 +146,82 @@ async function buildRouteTreeAsync(currentPath: string, relativePath: string): P
 function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteConfigEntry[] {
   const routes: RouteConfigEntry[] = [];
 
-  let currentPath;
-  if (node.path === "app") {
-    currentPath = "";
+  // Calculate the path for the current node
+  let currentPath: string;
+  // Check relativePath first for the absolute root of scanning ('src/app')
+  if (node.relativePath === "app") {
+    currentPath = "/"; // Base path is root
+  } else if (node.isGrouping) {
+    currentPath = parentPath; // Grouping folders don't add to the path
   } else {
-    currentPath =
-      node.isGrouping || !node.path
-        ? parentPath
-        : parentPath
-          ? `${parentPath}/${node.path}`
-          : node.path;
-  }
-
-  if (node.isPage) {
-    const files = fs.readdirSync(path.join(process.cwd(), "src", node.relativePath));
-    const hasPage = files.includes("page.tsx");
-
-    const componentPath = normalizePath(
-      `${node.relativePath}/${hasPage ? "page.tsx" : "route.ts"}`,
-    );
-
-    if (currentPath === "") {
-      routes.push(index(componentPath));
+    // Append the node's path segment (could be empty for root 'app' node handled above)
+    const segment = node.path;
+    if (!segment) {
+      currentPath = parentPath || "/"; // Should usually have a parent path here
+    } else if (parentPath === "/") {
+      currentPath = `/${segment}`; // Append to root
     } else {
-      routes.push(route(currentPath, componentPath));
+      currentPath = parentPath ? `${parentPath}/${segment}` : segment; // Append to parent or use as base
     }
   }
 
+  // Determine the component file path if it's a page route
+  let componentPath: string | undefined = undefined;
+  if (node.isPage) {
+    try {
+      // Use sync FS operations here as this runs during build/dev server setup
+      const files = fs.readdirSync(path.join(process.cwd(), "src", node.relativePath));
+      const hasPage = files.includes("page.tsx");
+      const hasRoute = files.includes("route.ts");
+      if (hasPage) {
+        componentPath = normalizePath(`${node.relativePath}/page.tsx`);
+      } else if (hasRoute) {
+        componentPath = normalizePath(`${node.relativePath}/route.ts`);
+      }
+    } catch (e) {
+      console.error(
+        `Error reading directory for page check: ${path.join(process.cwd(), "src", node.relativePath)}`,
+        e,
+      );
+    }
+  }
+
+  // Recursively convert children, passing the calculated currentPath
+  const childRoutes = node.children.flatMap((child) => convertTreeToRoutes(child, currentPath));
+
+  // Handle layout routes
   if (node.isLayout) {
     const layoutPath = normalizePath(`${node.relativePath}/layout.tsx`);
-    const childRoutes = node.children.flatMap((child) => convertTreeToRoutes(child, currentPath));
+    const layoutChildren = [...childRoutes];
 
-    if (childRoutes.length > 0) {
-      routes.push(layout(layoutPath, childRoutes));
+    // If the layout node itself also has a page, add it as an index route *within* the layout
+    if (componentPath) {
+      // An index route within a layout means it renders at the layout's path
+      layoutChildren.push({ index: true, file: componentPath });
+    }
+
+    // Use the layout() helper - it creates a pathless route suitable for wrapping children
+    // We assume the @react-router/dev tooling handles placing this correctly based on hierarchy
+    if (layoutChildren.length > 0) {
+      // Only add layout if it has children or an index page
+      routes.push(layout(layoutPath, layoutChildren));
+    } else if (componentPath) {
+      // If layout ONLY had an index page and no other children, render layout wrapping index.
+      routes.push(layout(layoutPath, [{ index: true, file: componentPath }]));
     }
   } else {
-    node.children.forEach((child) => {
-      routes.push(...convertTreeToRoutes(child, currentPath));
-    });
+    // Not a layout route
+    // Add the page route if it exists (and wasn't handled as index in a layout above)
+    if (componentPath) {
+      // *** CHANGE HERE: Use route("/", ...) instead of index(...) for the root path ***
+      if (currentPath === "/") {
+        routes.push(route("/", componentPath)); // Explicit root path route
+      } else {
+        routes.push(route(currentPath, componentPath));
+      }
+    }
+    // Add children processed earlier if this wasn't a layout node
+    routes.push(...childRoutes);
   }
 
   return routes;
