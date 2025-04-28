@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { cn } from "~/libs/clsx";
+import { MonthYearGrid } from "./month-year-grid";
 
 export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
@@ -19,15 +20,6 @@ function genMonths(locale: Pick<Locale, "options" | "localize" | "formatLong">) 
   return Array.from({ length: 12 }, (_, i) => ({
     value: i,
     label: format(new Date(2021, i), "MMMM", { locale }),
-  }));
-}
-
-function genYears(pastYears = 75, futureYears = 2) {
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  return Array.from({ length: pastYears + futureYears + 1 }, (_, i) => ({
-    value: currentYear - pastYears + i,
-    label: (currentYear - pastYears + i).toString(),
   }));
 }
 
@@ -39,6 +31,8 @@ function Calendar({
   futureYears = 2,
   ...props
 }: CalendarProps & { pastYears?: number; futureYears?: number }) {
+  const [showYearGrid, setShowYearGrid] = React.useState(false);
+
   const MONTHS = React.useMemo(() => {
     let locale: Pick<Locale, "options" | "localize" | "formatLong"> = enUS;
     const { options, localize, formatLong } = props.locale || {};
@@ -51,8 +45,6 @@ function Calendar({
     }
     return genMonths(locale);
   }, [props.locale]);
-
-  const YEARS = React.useMemo(() => genYears(pastYears, futureYears), [pastYears, futureYears]);
 
   const disableLeftNavigation = () => {
     const today = new Date();
@@ -77,6 +69,22 @@ function Calendar({
     }
     return false;
   };
+
+  if (showYearGrid) {
+    return (
+      <div className={cn("p-3", className)}>
+        <MonthYearGrid
+          locale={props.locale?.code}
+          onChange={(date) => {
+            props.onMonthChange?.(date);
+            setShowYearGrid(false);
+          }}
+          type="year"
+          value={props.month || new Date()}
+        />
+      </div>
+    );
+  }
 
   return (
     <DayPicker
@@ -132,17 +140,18 @@ function Calendar({
                   newDate.setMonth(newDate.getMonth() - 1);
                   props.onMonthChange?.(newDate);
                 }}
+                type="button"
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
               <div className="bg-background flex items-center gap-1 rounded-lg px-3 transition-colors">
                 <Select
-                  defaultValue={calendarMonth.date.getMonth().toString()}
                   onValueChange={(value) => {
                     const newDate = new Date(calendarMonth.date);
                     newDate.setMonth(Number.parseInt(value, 10));
                     props.onMonthChange?.(newDate);
                   }}
+                  value={calendarMonth.date.getMonth().toString()}
                 >
                   <SelectTrigger
                     aria-label="Select month"
@@ -162,32 +171,13 @@ function Calendar({
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  defaultValue={calendarMonth.date.getFullYear().toString()}
-                  onValueChange={(value) => {
-                    const newDate = new Date(calendarMonth.date);
-                    newDate.setFullYear(Number.parseInt(value, 10));
-                    props.onMonthChange?.(newDate);
-                  }}
+                <button
+                  className="hover:bg-accent/50 text-foreground h-auto cursor-pointer rounded-sm px-2 py-0.5 text-sm focus:outline-none"
+                  onClick={() => setShowYearGrid(true)}
+                  type="button"
                 >
-                  <SelectTrigger
-                    aria-label="Select year"
-                    className="hover:bg-accent/50 text-foreground h-auto w-fit rounded-sm border-0 border-none p-0 py-0.5 ps-1 shadow-none outline-none focus:ring-0 focus:ring-offset-0"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent align="center" className="max-h-60" position="popper">
-                    {YEARS.map((year) => (
-                      <SelectItem
-                        className="cursor-pointer"
-                        key={year.value}
-                        value={year.value.toString()}
-                      >
-                        {year.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  {calendarMonth.date.getFullYear()}
+                </button>
               </div>
 
               <button
@@ -195,7 +185,7 @@ function Calendar({
                 className={cn(
                   buttonVariants({ variant: "outline", size: "icon" }),
                   "hover:bg-accent hover:text-accent-foreground size-7 transition-colors",
-                  disableLeftNavigation() && "pointer-events-none opacity-30",
+                  disableRightNavigation() && "pointer-events-none opacity-30",
                 )}
                 disabled={disableRightNavigation()}
                 onClick={() => {
@@ -203,6 +193,7 @@ function Calendar({
                   newDate.setMonth(newDate.getMonth() + 1);
                   props.onMonthChange?.(newDate);
                 }}
+                type="button"
               >
                 <ChevronRight className="h-5 w-5" />
               </button>
@@ -219,4 +210,3 @@ function Calendar({
 Calendar.displayName = "Calendar";
 
 export { Calendar };
-

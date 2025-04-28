@@ -2,12 +2,12 @@ export const ROUTES = {
   AUTH: {
     LOGIN: "/login",
   },
-  DASHBOARD: "/dashboard",
+  DASHBOARD: "/app/dashboard",
   USERS: {
-    LIST: "/users",
-    CREATE: "/users/create",
-    DETAIL: "/users/:id",
-    EDIT: "/users/:id/edit",
+    LIST: "/app/users",
+    CREATE: "/app/users/create",
+    DETAIL: "/app/users/:id",
+    EDIT: "/app/users/:id/edit",
   },
   ANALYTICS: {
     OVERVIEW: "/dashboard/analytics/overview",
