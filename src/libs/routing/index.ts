@@ -144,24 +144,20 @@ async function buildRouteTreeAsync(currentPath: string, relativePath: string): P
  * @returns {RouteConfigEntry[]} React Router route configuration entries
  */
 function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteConfigEntry[] {
-  const routes: RouteConfigEntry[] = [];
-
   // Calculate the path for the current node
   let currentPath: string;
-  // Check relativePath first for the absolute root of scanning ('src/app')
   if (node.relativePath === "app") {
     currentPath = "/"; // Base path is root
   } else if (node.isGrouping) {
     currentPath = parentPath; // Grouping folders don't add to the path
   } else {
-    // Append the node's path segment (could be empty for root 'app' node handled above)
     const segment = node.path;
     if (!segment) {
-      currentPath = parentPath || "/"; // Should usually have a parent path here
+      currentPath = parentPath || "/";
     } else if (parentPath === "/") {
-      currentPath = `/${segment}`; // Append to root
+      currentPath = `/${segment}`;
     } else {
-      currentPath = parentPath ? `${parentPath}/${segment}` : segment; // Append to parent or use as base
+      currentPath = parentPath ? `${parentPath}/${segment}` : segment;
     }
   }
 
@@ -169,7 +165,6 @@ function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteCon
   let componentPath: string | undefined = undefined;
   if (node.isPage) {
     try {
-      // Use sync FS operations here as this runs during build/dev server setup
       const files = fs.readdirSync(path.join(process.cwd(), "src", node.relativePath));
       const hasPage = files.includes("page.tsx");
       const hasRoute = files.includes("route.ts");
@@ -189,40 +184,39 @@ function convertTreeToRoutes(node: RouteNode, parentPath: string = ""): RouteCon
   // Recursively convert children, passing the calculated currentPath
   const childRoutes = node.children.flatMap((child) => convertTreeToRoutes(child, currentPath));
 
-  // Handle layout routes
+  const currentLevelRoutes: RouteConfigEntry[] = [];
+
   if (node.isLayout) {
     const layoutPath = normalizePath(`${node.relativePath}/layout.tsx`);
     const layoutChildren = [...childRoutes];
 
     // If the layout node itself also has a page, add it as an index route *within* the layout
     if (componentPath) {
-      // An index route within a layout means it renders at the layout's path
       layoutChildren.push({ index: true, file: componentPath });
     }
 
-    // Use the layout() helper - it creates a pathless route suitable for wrapping children
-    // We assume the @react-router/dev tooling handles placing this correctly based on hierarchy
+    // Only add layout if it has children or an index page
     if (layoutChildren.length > 0) {
-      // Only add layout if it has children or an index page
-      routes.push(layout(layoutPath, layoutChildren));
-    } else if (componentPath) {
-      // If layout ONLY had an index page and no other children, render layout wrapping index.
-      routes.push(layout(layoutPath, [{ index: true, file: componentPath }]));
+      currentLevelRoutes.push(layout(layoutPath, layoutChildren));
     }
   } else {
-    // Not a layout route
-    // Add the page route if it exists (and wasn't handled as index in a layout above)
+    // Not a layout node
+
+    // Add the page route if it exists
     if (componentPath) {
-      // *** CHANGE HERE: Use route("/", ...) instead of index(...) for the root path ***
+      // *** Use index: true for the root path instead of route("/") ***
       if (currentPath === "/") {
-        routes.push(route("/", componentPath)); // Explicit root path route
+        // Define the root page using index: true at the top level
+        currentLevelRoutes.push({ index: true, file: componentPath });
       } else {
-        routes.push(route(currentPath, componentPath));
+        // Define other pages using route(path, file)
+        currentLevelRoutes.push(route(currentPath, componentPath));
       }
     }
-    // Add children processed earlier if this wasn't a layout node
-    routes.push(...childRoutes);
+
+    // Add children processed earlier. React Router will handle nesting based on paths.
+    currentLevelRoutes.push(...childRoutes);
   }
 
-  return routes;
+  return currentLevelRoutes;
 }
