@@ -1,7 +1,7 @@
 import {
   QueryClient,
   type UseMutationOptions,
-  useMutation as useMutationOrigin,
+  useMutation as useMutationOriginal,
 } from "@tanstack/react-query";
 import { AxiosError } from "axios";
 import { type ErrorResponse } from "~/common/types/base-response";
@@ -14,4 +14,4 @@ export const useMutation = <
 >(
   options: UseMutationOptions<TData, TError, TVariables, TContext>,
   queryClient?: QueryClient,
-) => useMutationOrigin<TData, TError, TVariables, TContext>(options, queryClient);
+) => useMutationOriginal<TData, TError, TVariables, TContext>(options, queryClient);
