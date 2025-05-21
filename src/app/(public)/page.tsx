@@ -1,3 +1,4 @@
+import { Loader2 } from "lucide-react";
 import { Link } from "react-router";
 import { ROUTES } from "~/common/constants/routes";
 import { useSession } from "~/components/providers/sessions";
@@ -49,10 +50,6 @@ export default function Home() {
     },
   ];
 
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <main className="flex items-center justify-center pt-16 pb-4">
       <div className="flex min-h-0 flex-1 flex-col items-center gap-16">
@@ -84,20 +81,28 @@ export default function Home() {
             </ul>
           </nav>
         </div>
-        {isAuthenticated ? (
-          <Button
-            className="cursor-pointer"
-            disabled={isLoading}
-            onClick={() => void signOut()}
-            type="button"
-            variant="destructive"
-          >
-            Logout
-          </Button>
+        {isLoading ? (
+          <div className="flex items-center justify-center">
+            <Loader2 className="h-4 w-4 animate-spin" />
+          </div>
         ) : (
-          <Button asChild className="cursor-pointer">
-            <Link to={ROUTES.AUTH.LOGIN}>Login</Link>
-          </Button>
+          <>
+            {isAuthenticated ? (
+              <Button
+                className="cursor-pointer"
+                disabled={isLoading}
+                onClick={() => void signOut()}
+                type="button"
+                variant="destructive"
+              >
+                Logout
+              </Button>
+            ) : (
+              <Button asChild className="cursor-pointer">
+                <Link to={ROUTES.AUTH.LOGIN}>Login</Link>
+              </Button>
+            )}
+          </>
         )}
       </div>
     </main>

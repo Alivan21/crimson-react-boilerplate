@@ -14,7 +14,7 @@ interface BaseTableParams {
  * Custom hook that syncs URL search parameters with data table state
  * and formats them for API requests
  */
-export function useTableQueryParams<T extends BaseTableParams>() {
+export function useQueryParams<T extends BaseTableParams>() {
   const [searchParams] = useSearchParams();
 
   const page = Number(searchParams.get("page") || "1");
