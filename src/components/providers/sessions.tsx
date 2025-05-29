@@ -116,7 +116,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
 }
 
 export function useSession(): SessionContextType {
-  const context = React.useContext(SessionContext);
+  const context = React.use(SessionContext);
   if (!context) {
     throw new Error("useSession must be used within a SessionProvider");
   }
