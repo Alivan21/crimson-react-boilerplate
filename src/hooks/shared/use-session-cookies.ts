@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useFetcher } from "react-router";
 import type { loader as sessionLoader } from "~/app/api/session/route";
 
@@ -15,6 +15,9 @@ export function useSessionCookies() {
    * Loads session data from cookies
    */
   const getSessionData = useCallback(async () => {
+    if (sessionFetcher.state === "loading") {
+      return sessionFetcher.data;
+    }
     await sessionFetcher.load("/api/session");
     return sessionFetcher.data;
   }, [sessionFetcher]);
@@ -27,6 +30,10 @@ export function useSessionCookies() {
    */
   const createSession = useCallback(
     async (token: string) => {
+      if (!token || typeof token !== "string") {
+        throw new Error("Invalid token provided for session creation");
+      }
+
       return actionFetcher.submit(
         { token },
         {
@@ -50,11 +57,18 @@ export function useSessionCookies() {
     });
   }, [actionFetcher]);
 
-  return {
-    sessionData: sessionFetcher.data,
-    isLoading: sessionFetcher.state === "loading" || actionFetcher.state === "submitting",
-    getSessionData,
-    createSession,
-    destroySession,
-  };
+  const isLoading = useMemo(() => {
+    return sessionFetcher.state === "loading" || actionFetcher.state === "submitting";
+  }, [sessionFetcher.state, actionFetcher.state]);
+
+  return useMemo(
+    () => ({
+      sessionData: sessionFetcher.data,
+      isLoading,
+      getSessionData,
+      createSession,
+      destroySession,
+    }),
+    [sessionFetcher.data, isLoading, getSessionData, createSession, destroySession],
+  );
 }

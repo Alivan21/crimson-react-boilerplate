@@ -1,11 +1,10 @@
-/* eslint-disable react-hooks/exhaustive-deps */
 import React from "react";
 import toast from "react-hot-toast";
 import { login, logout } from "~/api/auth";
 import type { TLoginRequest } from "~/api/auth/schema";
 import type { UserData } from "~/common/types/user-data";
 import { useSessionCookies } from "~/hooks/shared/use-session-cookies";
-import { httpClient } from "~/libs/axios";
+import { httpClient, registerSignOutCallback, unregisterSignOutCallback } from "~/libs/axios";
 import { decodeJwt } from "~/utils/jwt";
 
 type SessionContextType = {
@@ -31,85 +30,167 @@ export function SessionProvider({ children }: SessionProviderProps) {
     createSession,
     destroySession,
   } = useSessionCookies();
+
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
   const [user, setUser] = React.useState<UserData | null>(null);
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
+  const [isInitialized, setIsInitialized] = React.useState<boolean>(false);
 
+  const clearAuthState = React.useCallback(() => {
+    setIsAuthenticated(false);
+    setUser(null);
+    setToken(null);
+    httpClient.defaults.headers.common.Authorization = undefined;
+  }, []);
+
+  const setAuthState = React.useCallback(
+    (tokenValue: string) => {
+      try {
+        const userData = decodeJwt<UserData>(tokenValue);
+
+        if (userData.exp && userData.exp < Math.floor(Date.now() / 1000)) {
+          clearAuthState();
+          return false;
+        }
+
+        httpClient.defaults.headers.common.Authorization = `Bearer ${tokenValue}`;
+        setIsAuthenticated(true);
+        setToken(tokenValue);
+        setUser(userData);
+        return true;
+      } catch (error) {
+        console.error("Failed to decode JWT:", error);
+        clearAuthState();
+        return false;
+      }
+    },
+    [clearAuthState],
+  );
+
+  // Initialize auth state
   React.useEffect(() => {
+    if (isInitialized) return;
+
     const initializeAuth = async () => {
-      setIsLoading(true);
-      if (!sessionData) {
-        await getSessionData();
-      } else {
+      try {
+        setIsLoading(true);
+
+        // Get session data if not already loaded
+        if (!sessionData) {
+          await getSessionData();
+          return; // Let the next effect handle the sessionData
+        }
+
         const storedToken = sessionData.token;
         if (storedToken) {
-          const userData = decodeJwt<UserData>(storedToken);
-          httpClient.defaults.headers.common.Authorization = `Bearer ${storedToken}`;
-          setIsAuthenticated(true);
-          setToken(storedToken);
-          setUser(userData);
+          const isValidToken = setAuthState(storedToken);
+          if (!isValidToken) {
+            // Token is invalid or expired, clean up
+            await destroySession();
+          }
         } else {
-          await destroySession();
-          setIsAuthenticated(false);
-          setUser(null);
-          setToken(null);
-          httpClient.defaults.headers.common.Authorization = undefined;
+          clearAuthState();
         }
+      } catch (error) {
+        console.error("Failed to initialize auth:", error);
+        clearAuthState();
+      } finally {
+        setIsLoading(false);
+        setIsInitialized(true);
       }
-      setIsLoading(false);
     };
+
     void initializeAuth();
-  }, [sessionData?.token]);
+  }, [sessionData, isInitialized, getSessionData, setAuthState, clearAuthState, destroySession]);
 
-  const handleLogin = async (credential: TLoginRequest) => {
-    try {
-      setIsLoading(true);
-      const { data } = await login(credential);
-      if (data.token) {
-        await createSession(data.token);
-        httpClient.defaults.headers.common.Authorization = `Bearer ${data.token}`;
-        setIsAuthenticated(true);
-        setToken(data.token);
-        setUser(decodeJwt<UserData>(data.token));
+  React.useEffect(() => {
+    if (!isInitialized) return;
+
+    const handleSessionChange = async () => {
+      try {
+        const storedToken = sessionData?.token;
+        if (storedToken) {
+          const isValidToken = setAuthState(storedToken);
+          if (!isValidToken) {
+            await destroySession();
+          }
+        } else {
+          clearAuthState();
+        }
+      } catch (error) {
+        console.error("Failed to handle session change:", error);
+        clearAuthState();
       }
-    } catch (error) {
-      setIsAuthenticated(false);
-      setUser(null);
-      setToken(null);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
 
-  const handleLogout = async () => {
+    void handleSessionChange();
+  }, [sessionData?.token, isInitialized, setAuthState, clearAuthState, destroySession]);
+
+  const handleLogin = React.useCallback(
+    async (credential: TLoginRequest) => {
+      try {
+        setIsLoading(true);
+        const { data } = await login(credential);
+
+        if (!data.token) {
+          throw new Error("No token received from login");
+        }
+
+        // Validate token before creating session
+        const userData = decodeJwt<UserData>(data.token);
+        if (userData.exp && userData.exp < Math.floor(Date.now() / 1000)) {
+          throw new Error("Received expired token");
+        }
+
+        await createSession(data.token);
+        setAuthState(data.token);
+      } catch (error) {
+        clearAuthState();
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [createSession, setAuthState, clearAuthState],
+  );
+
+  const handleLogout = React.useCallback(async () => {
     try {
       setIsLoading(true);
-      await Promise.all([destroySession(), logout()]);
-      httpClient.defaults.headers.common.Authorization = undefined;
-      setIsAuthenticated(false);
-      setUser(null);
-      setToken(null);
+
+      // Clear state immediately for better UX
+      clearAuthState();
+
+      // Perform cleanup operations
+      await Promise.allSettled([destroySession(), logout()]);
+
       toast.success("Logout successful");
     } catch (error) {
-      toast.error("Logout failed. Please try again.");
       console.error("Logout failed:", error);
+      toast.error("Logout failed. Please try again.");
+      // Don't re-throw the error to prevent blocking the UI
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [destroySession, clearAuthState]);
+
+  // Register/unregister signOut callback with axios interceptor
+  React.useEffect(() => {
+    registerSignOutCallback(handleLogout);
+    return () => unregisterSignOutCallback();
+  }, [handleLogout]);
 
   const contextValue = React.useMemo(
     () => ({
       isAuthenticated,
       user,
       token,
+      isLoading: isLoading || cookieLoading,
       signIn: handleLogin,
       signOut: handleLogout,
-      isLoading: isLoading || cookieLoading,
     }),
-    [isAuthenticated, user, token, isLoading, cookieLoading],
+    [isAuthenticated, user, token, isLoading, cookieLoading, handleLogin, handleLogout],
   );
 
   return <SessionContext.Provider value={contextValue}>{children}</SessionContext.Provider>;

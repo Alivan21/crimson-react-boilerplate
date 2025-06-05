@@ -1,6 +1,5 @@
 import { BadgeCheck, ChevronsUpDown, LogOut } from "lucide-react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 import {
   DropdownMenu,
@@ -31,12 +30,9 @@ export type UserNavigationProps = {
 export function UserNavigation({ user }: UserNavigationProps) {
   const { isMobile } = useSidebar();
   const { signOut } = useSession();
-  const navigate = useNavigate();
   const handleLogout = async () => {
     try {
       await signOut();
-      await navigate("/");
-      toast.success("Logout successful");
     } catch {
       toast.error("Logout failed");
     }

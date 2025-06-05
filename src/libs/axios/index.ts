@@ -1,6 +1,4 @@
 import axios, { AxiosError } from "axios";
-import { redirect } from "react-router";
-import { useSession } from "~/components/providers/sessions";
 import { env } from "../env";
 
 export const httpClient = axios.create({
@@ -9,18 +7,32 @@ export const httpClient = axios.create({
 });
 
 let isLoggingOut = false;
+let signOutCallback: (() => Promise<void>) | null = null;
+
+export const registerSignOutCallback = (callback: () => Promise<void>) => {
+  signOutCallback = callback;
+};
+
+export const unregisterSignOutCallback = () => {
+  signOutCallback = null;
+};
 
 httpClient.interceptors.response.use(
   (response) => {
     return response;
   },
   async (error: AxiosError) => {
-    const { signOut } = useSession();
-    if (error.response?.status === 401 && !isLoggingOut) {
+    if (error.response?.status === 401 && !isLoggingOut && signOutCallback) {
       isLoggingOut = true;
-      await signOut();
-      isLoggingOut = false;
-      redirect(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+      try {
+        await signOutCallback();
+        const currentPath = window.location.pathname;
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      } catch (signOutError) {
+        console.error("Failed to sign out:", signOutError);
+      } finally {
+        isLoggingOut = false;
+      }
     }
 
     return Promise.reject(error);
