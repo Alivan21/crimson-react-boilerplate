@@ -4,4 +4,7 @@ export const QUERY_KEY = {
     DETAIL: "userDetail",
     OPTIONS: "userOptions",
   },
+  AUTH: {
+    PERMISSIONS: "permissions",
+  },
 };
