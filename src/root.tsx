@@ -9,6 +9,7 @@ import {
 } from "react-router";
 import type { Route } from "./+types/root";
 import { SessionProvider } from "./components/providers/sessions";
+import { PermissionsSync } from "./hooks/shared/use-permissions";
 import TanstackProvider from "./libs/tanstack-query/providers";
 import "./app.css";
 
@@ -53,6 +54,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <SessionProvider>
+      <PermissionsSync />
       <TanstackProvider>
         <Outlet />
         <Toaster position="top-center" />
