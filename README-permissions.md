@@ -2,7 +2,7 @@
 
 ## Overview
 
-This permission system provides automatic permission checking using React Router v7 handles. It caches permissions in localStorage to avoid repeated API calls.
+This permission system provides automatic permission checking using React Router v7 handles. It uses TanStack Query for efficient caching and avoids localStorage to prevent potential security vulnerabilities.
 
 ## Components
 
@@ -13,14 +13,15 @@ The main component that wraps your app and automatically checks permissions base
 **Features:**
 
 - Automatically fetches permissions on app load
-- Caches permissions in localStorage with expiration (24 hours)
+- Uses TanStack Query for secure, efficient caching (24-hour stale time, 30-day garbage collection)
+- Optimized for performance with disabled refetching on window focus/reconnect
 - Checks route permissions using React Router handles
 - Shows loading and error states
 - Displays access denied page for unauthorized users
 
 ### usePermissions Hook
 
-A hook to check permissions in individual components.
+A hook to check permissions in individual components using TanStack Query's cached data.
 
 ## Usage
 
@@ -44,7 +45,7 @@ export default function UsersPage() {
 Use the `usePermissions` hook in components:
 
 ```tsx
-import { usePermissions } from "~/components/providers/permission-guard";
+import { usePermissions } from "~/hooks/shared/use-permission";
 
 export default function SomeComponent() {
   const { hasPermission, hasAnyPermission, hasAllPermissions } = usePermissions();
@@ -86,15 +87,22 @@ export default function UserActions({ userId }: { userId: string }) {
 
 ## Configuration
 
-### localStorage Keys
+### TanStack Query Caching
 
-- `user_permissions`: Stores the permissions array
-- `user_permissions_expiry`: Stores the expiration timestamp
+The permission system uses TanStack Query with the following optimized settings:
 
-### Cache Duration
+- **Stale Time**: 24 hours - permissions remain fresh for a full day
+- **Garbage Collection Time**: 30 days - cached data persists for 30 days when unused
+- **Refetch Behavior**: Disabled on window focus, reconnect, and mount (when data is fresh)
+- **Retry Policy**: Up to 3 retries for failed requests
+- **Structural Sharing**: Enabled to prevent unnecessary re-renders
 
-- Default: 24 hours
-- Can be modified by changing `PERMISSIONS_CACHE_DURATION` in the component
+### Security Benefits
+
+- **No localStorage**: Permissions are not stored in localStorage, reducing XSS attack vectors
+- **Memory-only cache**: Permissions exist only in TanStack Query's in-memory cache
+- **Automatic cleanup**: Cache is automatically managed and cleaned up by TanStack Query
+- **Query deduplication**: Multiple components requesting permissions share the same query
 
 ### Custom Fallback Component
 
@@ -127,3 +135,22 @@ Your permissions API should return an array of permission strings:
   "data": ["user:read", "user:write", "report:generate"]
 }
 ```
+
+## Performance Optimization
+
+The system is optimized for performance through:
+
+1. **Efficient Caching**: 24-hour stale time prevents unnecessary API calls
+2. **Query Deduplication**: Multiple components share the same permission query
+3. **Structural Sharing**: Prevents re-renders when data hasn't changed
+4. **Background Refetch Disabled**: Reduces unnecessary network requests
+5. **Memory Management**: Automatic garbage collection after 30 days
+
+## Migration from localStorage
+
+If you're migrating from a localStorage-based permission system:
+
+1. **Automatic cleanup**: Old localStorage keys will naturally expire and be unused
+2. **Immediate benefits**: Enhanced security and performance
+3. **Seamless transition**: All existing `usePermissions` hook calls work identically
+4. **No API changes**: The same permission API format is supported
