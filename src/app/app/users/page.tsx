@@ -14,6 +14,10 @@ import { useDeleteUserMutation } from "~/hooks/api/users/use-delete-user";
 import { useUsersQuery } from "~/hooks/api/users/use-users";
 import { useQueryParams } from "~/hooks/shared/use-query-params";
 
+export const handle = {
+  permission: "user:read",
+};
+
 export default function Component() {
   const breadcrumbs: BreadcrumbsItem[] = [
     {

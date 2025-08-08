@@ -1,4 +1,4 @@
-import type { TLoginResponse } from "./type";
+import type { TLoginResponse, TPermissionResponse } from "./type";
 import { loginSchema, type TLoginRequest } from "./schema";
 
 /**
@@ -75,4 +75,12 @@ export const login = async (credentials: TLoginRequest): Promise<TLoginResponse>
 export const logout = async (): Promise<void> => {
   await new Promise((resolve) => setTimeout(resolve, 500));
   return Promise.resolve();
+};
+
+export const getPermissions = (): TPermissionResponse => {
+  return {
+    data: ["dashboard:read", "user:write", "user:delete"],
+    message: "Permissions fetched successfully",
+    timestamp: new Date().toISOString(),
+  };
 };

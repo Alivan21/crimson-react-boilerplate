@@ -8,6 +8,7 @@ import {
   ScrollRestoration,
 } from "react-router";
 import type { Route } from "./+types/root";
+import PermissionGuard from "./components/providers/permission-guard";
 import { SessionProvider } from "./components/providers/sessions";
 import TanstackProvider from "./libs/tanstack-query/providers";
 import "./app.css";
@@ -54,7 +55,9 @@ export default function App() {
   return (
     <SessionProvider>
       <TanstackProvider>
-        <Outlet />
+        <PermissionGuard>
+          <Outlet />
+        </PermissionGuard>
         <Toaster position="top-center" />
       </TanstackProvider>
     </SessionProvider>

@@ -7,3 +7,7 @@ export type TLoginItem = {
 };
 
 export type TLoginResponse = SuccessResponse<TLoginItem>;
+
+export type TPermissionItem = string[];
+
+export type TPermissionResponse = SuccessResponse<TPermissionItem>;
