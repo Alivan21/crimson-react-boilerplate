@@ -9,7 +9,7 @@ export const usePermissionsQuery = () => {
     // Cache permissions for 24 hours (stale time)
     staleTime: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
     // Keep in cache for 30 days when unused (garbage collection time)
-    gcTime: 30 * 24 * 60 * 60 * 1000, // 30 days in milliseconds
+    gcTime: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
     // Don't refetch on window focus for permissions
     refetchOnWindowFocus: false,
     // Don't refetch on reconnect for permissions
