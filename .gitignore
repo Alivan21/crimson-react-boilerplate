@@ -8,3 +8,6 @@
 # ENV
 /.env*
 !.env.example
+
+# Ts Config Build Info
+*.tsbuildinfo
