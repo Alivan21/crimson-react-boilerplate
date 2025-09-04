@@ -2,9 +2,11 @@ import React from "react";
 import toast from "react-hot-toast";
 import { login, logout } from "~/api/auth";
 import type { TLoginRequest } from "~/api/auth/schema";
+import { QUERY_KEY } from "~/common/constants/query-keys";
 import type { UserData } from "~/common/types/user-data";
 import { useSessionCookies } from "~/hooks/shared/use-session-cookies";
 import { httpClient, registerSignOutCallback, unregisterSignOutCallback } from "~/libs/axios";
+import { queryClient } from "~/libs/tanstack-query/query-client";
 import { decodeJwt } from "~/utils/jwt";
 
 type SessionContextType = {
@@ -145,6 +147,8 @@ export function SessionProvider({ children }: SessionProviderProps) {
 
         await createSession(data.token);
         setAuthState(data.token);
+
+        void queryClient.invalidateQueries({ queryKey: [QUERY_KEY.AUTH.PERMISSIONS] });
       } catch (error) {
         clearAuthState();
         throw error;
@@ -159,8 +163,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     try {
       setIsLoading(true);
 
-      // Clear state immediately for better UX
-      clearAuthState();
+      queryClient.removeQueries({ queryKey: [QUERY_KEY.AUTH.PERMISSIONS] });
 
       // Perform cleanup operations
       await Promise.allSettled([destroySession(), logout()]);
@@ -173,7 +176,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     } finally {
       setIsLoading(false);
     }
-  }, [destroySession, clearAuthState]);
+  }, [destroySession]);
 
   // Register/unregister signOut callback with axios interceptor
   React.useEffect(() => {

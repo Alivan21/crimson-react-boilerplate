@@ -79,7 +79,7 @@ export const logout = async (): Promise<void> => {
 
 export const getPermissions = (): TPermissionResponse => {
   return {
-    data: ["dashboard:read", "user:write", "user:delete"],
+    data: ["dashboard:read", "user:read", "user:create", "user:delete"],
     message: "Permissions fetched successfully",
     timestamp: new Date().toISOString(),
   };

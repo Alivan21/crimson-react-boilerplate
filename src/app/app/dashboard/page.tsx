@@ -9,6 +9,10 @@ import Combobox from "~/components/ui/combobox";
 import { DateTimePicker } from "~/components/ui/datetime-picker";
 import { Input } from "~/components/ui/input";
 
+export const handle = {
+  permission: "dashboard:read",
+};
+
 export default function Component() {
   const breadcrumbs: BreadcrumbsItem[] = [
     {

@@ -18,7 +18,7 @@ export function useQueryParams<T extends BaseTableParams>() {
   const [searchParams] = useSearchParams();
 
   const page = Number(searchParams.get("page") || "1");
-  const limit = Number(searchParams.get("pageSize") || "10");
+  const limit = Number(searchParams.get("limit") || "10");
   const search = searchParams.get("search") || undefined;
   const sort = searchParams.get("sort") || undefined;
   const order = searchParams.get("order") || undefined;
@@ -37,7 +37,7 @@ export function useQueryParams<T extends BaseTableParams>() {
     // Add any other filter parameters from the URL
     // (This will capture any custom filters added via the DataTableFilters component)
     searchParams.forEach((value, key) => {
-      if (!["page", "pageSize", "search", "sort", "order"].includes(key)) {
+      if (!["page", "limit", "search", "sort", "order"].includes(key)) {
         (params as Record<string, unknown>)[key] = value;
       }
     });
@@ -52,6 +52,6 @@ export function useQueryParams<T extends BaseTableParams>() {
     queryParams,
     pageCount,
     tablePageIndex,
-    pageSize: limit,
+    limit: limit,
   };
 }
