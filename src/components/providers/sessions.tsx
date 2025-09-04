@@ -1,8 +1,10 @@
 import React from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router";
 import { login, logout } from "~/api/auth";
 import type { TLoginRequest } from "~/api/auth/schema";
 import { QUERY_KEY } from "~/common/constants/query-keys";
+import { ROUTES } from "~/common/constants/routes";
 import type { UserData } from "~/common/types/user-data";
 import { useSessionCookies } from "~/hooks/shared/use-session-cookies";
 import { httpClient, registerSignOutCallback, unregisterSignOutCallback } from "~/libs/axios";
@@ -25,6 +27,7 @@ type SessionProviderProps = {
 };
 
 export function SessionProvider({ children }: SessionProviderProps) {
+  const navigate = useNavigate();
   const {
     sessionData,
     isLoading: cookieLoading,
@@ -88,7 +91,6 @@ export function SessionProvider({ children }: SessionProviderProps) {
         if (storedToken) {
           const isValidToken = setAuthState(storedToken);
           if (!isValidToken) {
-            // Token is invalid or expired, clean up
             await destroySession();
           }
         } else {
@@ -139,15 +141,8 @@ export function SessionProvider({ children }: SessionProviderProps) {
           throw new Error("No token received from login");
         }
 
-        // Validate token before creating session
-        const userData = decodeJwt<UserData>(data.token);
-        if (userData.exp && userData.exp < Math.floor(Date.now() / 1000)) {
-          throw new Error("Received expired token");
-        }
-
         await createSession(data.token);
         setAuthState(data.token);
-
         void queryClient.invalidateQueries({ queryKey: [QUERY_KEY.AUTH.PERMISSIONS] });
       } catch (error) {
         clearAuthState();
@@ -162,20 +157,19 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const handleLogout = React.useCallback(async () => {
     try {
       setIsLoading(true);
-
       queryClient.removeQueries({ queryKey: [QUERY_KEY.AUTH.PERMISSIONS] });
-
-      // Perform cleanup operations
+      clearAuthState();
       await Promise.allSettled([destroySession(), logout()]);
-
       toast.success("Logout successful");
+
+      void navigate(ROUTES.AUTH.LOGIN, { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
       toast.error("Logout failed. Please try again.");
-      // Don't re-throw the error to prevent blocking the UI
     } finally {
       setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [destroySession]);
 
   // Register/unregister signOut callback with axios interceptor

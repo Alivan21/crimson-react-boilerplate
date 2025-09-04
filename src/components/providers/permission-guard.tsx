@@ -16,7 +16,6 @@ export default function PermissionGuard({
   const navigate = useNavigate();
   const { data: permissionsData, isLoading, isError, error } = usePermissionsQuery();
 
-  // Get the current route's required permission
   const currentMatch = matches[matches.length - 1];
   const requiredPermission = (currentMatch?.handle as { permission?: string })?.permission;
 
