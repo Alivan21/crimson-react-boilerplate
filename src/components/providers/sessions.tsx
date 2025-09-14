@@ -158,10 +158,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     try {
       setIsLoading(true);
       queryClient.removeQueries({ queryKey: [QUERY_KEY.AUTH.PERMISSIONS] });
-      clearAuthState();
       await Promise.allSettled([destroySession(), logout()]);
-      toast.success("Logout successful");
-
       void navigate(ROUTES.AUTH.LOGIN, { replace: true });
     } catch (error) {
       console.error("Logout failed:", error);
@@ -169,8 +166,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
     } finally {
       setIsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [destroySession]);
+  }, [destroySession, navigate]);
 
   // Register/unregister signOut callback with axios interceptor
   React.useEffect(() => {
