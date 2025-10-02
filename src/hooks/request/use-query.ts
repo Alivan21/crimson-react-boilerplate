@@ -4,11 +4,11 @@ import {
   type UseQueryOptions,
   useQuery as useQueryOriginal,
 } from "@tanstack/react-query";
-import { type ErrorResponse } from "~/common/types/base-response";
+import { type TErrorResponse } from "~/common/types/base-response";
 
 export const useQuery = <
   TQueryFnData = unknown,
-  TError = ErrorResponse,
+  TError = TErrorResponse,
   TData = TQueryFnData,
   TQueryKey extends QueryKey = QueryKey,
 >(

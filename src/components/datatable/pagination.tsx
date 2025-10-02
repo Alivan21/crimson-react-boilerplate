@@ -9,24 +9,27 @@ import {
 } from "~/components/ui/select";
 import type { Table } from "@tanstack/react-table";
 
-type DataTablePaginationProps<TData> = {
+type TDataTablePaginationProps<TData> = {
   table: Table<TData>;
   totalCount: number;
 };
 
-export function DataTablePagination<TData>({ table, totalCount }: DataTablePaginationProps<TData>) {
+const PAGE_SIZES = [10, 20, 30, 40, 50] as const;
+
+export function DataTablePagination<TData>({
+  table,
+  totalCount,
+}: TDataTablePaginationProps<TData>) {
+  const { pageIndex, pageSize } = table.getState().pagination;
+  const startEntry = pageIndex * pageSize + 1;
+  const endEntry = Math.min((pageIndex + 1) * pageSize, totalCount);
+
   return (
     <div className="flex flex-col items-center justify-between gap-4 px-2 lg:flex-row">
       <div className="text-muted-foreground text-sm">
         {totalCount > 0 ? (
           <>
-            Showing{" "}
-            {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1} to{" "}
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              totalCount,
-            )}{" "}
-            of {totalCount} entries
+            Showing {startEntry} to {endEntry} of {totalCount} entries
           </>
         ) : (
           "No results"
@@ -39,15 +42,15 @@ export function DataTablePagination<TData>({ table, totalCount }: DataTablePagin
             onValueChange={(value) => {
               table.setPageSize(Number(value));
             }}
-            value={`${table.getState().pagination.pageSize}`}
+            value={String(pageSize)}
           >
             <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue placeholder={table.getState().pagination.pageSize} />
+              <SelectValue placeholder={pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
+              {PAGE_SIZES.map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  {size}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -73,9 +76,7 @@ export function DataTablePagination<TData>({ table, totalCount }: DataTablePagin
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-1">
-            <span className="text-sm font-medium">
-              Page {table.getState().pagination.pageIndex + 1}
-            </span>
+            <span className="text-sm font-medium">Page {pageIndex + 1}</span>
             <span className="text-muted-foreground text-sm">of {table.getPageCount()}</span>
           </div>
           <Button

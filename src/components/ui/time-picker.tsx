@@ -203,7 +203,7 @@ function display12HourValue(hours: number) {
 
 // ---------- utils end ----------
 
-interface PeriodSelectorProps {
+type TPeriodSelectorProps = {
   period: Period;
   setPeriod?: (m: Period) => void;
   date?: Date | null;
@@ -211,7 +211,7 @@ interface PeriodSelectorProps {
   onRightFocus?: () => void;
   onLeftFocus?: () => void;
   ref?: React.Ref<HTMLButtonElement>;
-}
+};
 
 const TimePeriodSelect = ({
   period,
@@ -221,7 +221,7 @@ const TimePeriodSelect = ({
   onLeftFocus,
   onRightFocus,
   ref,
-}: PeriodSelectorProps) => {
+}: TPeriodSelectorProps) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     if (e.key === "ArrowRight") onRightFocus?.();
     if (e.key === "ArrowLeft") onLeftFocus?.();
@@ -264,7 +264,7 @@ const TimePeriodSelect = ({
 
 TimePeriodSelect.displayName = "TimePeriodSelect";
 
-interface TimePickerInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+type TTimePickerInputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   picker: TimePickerType;
   date?: Date | null;
   onDateChange?: (date: Date | undefined) => void;
@@ -272,7 +272,7 @@ interface TimePickerInputProps extends React.InputHTMLAttributes<HTMLInputElemen
   onRightFocus?: () => void;
   onLeftFocus?: () => void;
   ref?: React.Ref<HTMLInputElement>;
-}
+};
 
 export const TimePickerInput = ({
   className,
@@ -290,7 +290,7 @@ export const TimePickerInput = ({
   onRightFocus,
   ref,
   ...props
-}: TimePickerInputProps) => {
+}: TTimePickerInputProps) => {
   const [flag, setFlag] = React.useState<boolean>(false);
   const [prevIntKey, setPrevIntKey] = React.useState<string>("0");
 
@@ -376,7 +376,7 @@ TimePickerInput.displayName = "TimePickerInput";
 
 type Granularity = "year" | "month" | "day" | "hour" | "minute" | "second";
 
-interface TimePickerProps {
+type TTimePickerProps = {
   date?: Date | null;
   onChange?: (date: Date | undefined) => void;
   hourCycle?: 12 | 24;
@@ -385,14 +385,14 @@ interface TimePickerProps {
    * Default is 'second'.
    * */
   granularity?: Granularity;
-  ref?: React.Ref<TimePickerRef>;
-}
+  ref?: React.Ref<TTimePickerRef>;
+};
 
-interface TimePickerRef {
+type TTimePickerRef = {
   minuteRef: HTMLInputElement | null;
   hourRef: HTMLInputElement | null;
   secondRef: HTMLInputElement | null;
-}
+};
 
 export const TimePicker = ({
   date,
@@ -400,7 +400,7 @@ export const TimePicker = ({
   hourCycle = 24,
   granularity = "second",
   ref,
-}: TimePickerProps) => {
+}: TTimePickerProps) => {
   const minuteRef = React.useRef<HTMLInputElement>(null);
   const hourRef = React.useRef<HTMLInputElement>(null);
   const secondRef = React.useRef<HTMLInputElement>(null);
@@ -481,4 +481,4 @@ export const TimePicker = ({
 
 TimePicker.displayName = "TimePicker";
 
-export type { Granularity, TimePickerRef, TimePickerInputProps };
+export type { Granularity, TTimePickerRef, TTimePickerInputProps };

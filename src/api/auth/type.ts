@@ -1,4 +1,4 @@
-import type { SuccessResponse } from "~/common/types/base-response";
+import type { TSuccessResponse } from "~/common/types/base-response";
 
 export type TLoginItem = {
   expires_at: string;
@@ -6,8 +6,8 @@ export type TLoginItem = {
   type: string;
 };
 
-export type TLoginResponse = SuccessResponse<TLoginItem>;
+export type TLoginResponse = TSuccessResponse<TLoginItem>;
 
 export type TPermissionItem = string[];
 
-export type TPermissionResponse = SuccessResponse<TPermissionItem>;
+export type TPermissionResponse = TSuccessResponse<TPermissionItem>;

@@ -1,20 +1,20 @@
 import { useMemo } from "react";
 import { useSearchParams } from "react-router";
 
-interface BaseTableParams {
+type TBaseTableParams = {
   page?: number;
   limit?: number;
   search?: string;
   sort?: string;
   order?: string;
   [key: string]: unknown;
-}
+};
 
 /**
  * Custom hook that syncs URL search parameters with data table state
  * and formats them for API requests
  */
-export function useQueryParams<T extends BaseTableParams>() {
+export function useQueryParams<T extends TBaseTableParams>() {
   const [searchParams] = useSearchParams();
 
   const page = Number(searchParams.get("page") || "1");

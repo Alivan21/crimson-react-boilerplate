@@ -11,14 +11,15 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 import pluginQuery from "@tanstack/eslint-plugin-query";
 
-export default tseslint.config(
+export default [
   { ignores: ["public/*", "build/*", "node_modules/*", "!.prettierrc", ".react-router/*"] },
+  ...[
+    pluginJs.configs.recommended,
+    ...tseslint.configs.recommended,
+    ...pluginQuery.configs["flat/recommended"],
+  ],
   {
-    extends: [
-      pluginJs.configs.recommended,
-      ...tseslint.configs.recommended,
-      ...pluginQuery.configs["flat/recommended"],
-    ],
+    files: ["**/*.{ts,tsx}"],
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
@@ -31,7 +32,6 @@ export default tseslint.config(
         },
       },
     },
-    files: ["**/*.{ts,tsx}"],
     plugins: {
       "@typescript-eslint": tsPlugin,
       import: importPlugin,
@@ -39,7 +39,6 @@ export default tseslint.config(
       "react-hooks": reactHooks,
       "react-refresh": reactRefresh,
       "jsx-a11y": jsxA11yPlugin,
-      ...prettierConfig,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
@@ -84,6 +83,7 @@ export default tseslint.config(
       "import/first": "off",
       "import/newline-after-import": "off",
       "import/no-duplicates": "warn",
+      ...prettierConfig.rules,
     },
     settings: {
       react: {
@@ -97,4 +97,4 @@ export default tseslint.config(
       "@typescript-eslint/only-throw-error": "off",
     },
   },
-);
+];

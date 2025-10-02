@@ -14,22 +14,23 @@ import { useDebounce } from "~/hooks/shared/use-debounce";
 import { cn } from "~/libs/clsx";
 import { ScrollArea } from "./scroll-area";
 
-export interface Option {
+export type TOption = {
   value: string;
   label: string;
   disable?: boolean;
   /** Group the options by providing key. */
   [key: string]: string | boolean | undefined;
-}
-interface GroupOption {
-  [key: string]: Option[];
-}
+};
 
-interface ComboboxProps {
-  value?: Option;
-  defaultOptions?: Option[];
+type TGroupOption = {
+  [key: string]: TOption[];
+};
+
+type TComboboxProps = {
+  value?: TOption;
+  defaultOptions?: TOption[];
   /** manually controlled options */
-  options?: Option[];
+  options?: TOption[];
   placeholder?: string;
   /** Loading component. */
   loadingIndicator?: React.ReactNode;
@@ -43,14 +44,14 @@ interface ComboboxProps {
    **/
   triggerSearchOnFocus?: boolean;
   /** async search */
-  onSearch?: (value: string) => Promise<Option[]>;
+  onSearch?: (value: string) => Promise<TOption[]>;
   /**
    * sync search. This search will not showing loadingIndicator.
    * The rest props are the same as async search.
    * i.e.: creatable, groupBy, delay.
    **/
-  onSearchSync?: (value: string) => Option[];
-  onChange?: (option: Option | undefined) => void;
+  onSearchSync?: (value: string) => TOption[];
+  onChange?: (option: TOption | undefined) => void;
   disabled?: boolean;
   /** Group the options base on provided key. */
   groupBy?: string;
@@ -71,17 +72,17 @@ interface ComboboxProps {
     React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>,
     "value" | "placeholder" | "disabled"
   >;
-  ref?: React.Ref<ComboboxRef>;
-}
+  ref?: React.Ref<TComboboxRef>;
+};
 
-export interface ComboboxRef {
-  selectedValue: Option | undefined;
+export type TComboboxRef = {
+  selectedValue: TOption | undefined;
   input: HTMLInputElement;
   focus: () => void;
   reset: () => void;
-}
+};
 
-const transToGroupOption = (options: Option[], groupBy?: string) => {
+const transToGroupOption = (options: TOption[], groupBy?: string) => {
   if (options.length === 0) {
     return {};
   }
@@ -89,7 +90,7 @@ const transToGroupOption = (options: Option[], groupBy?: string) => {
     return { "": options };
   }
 
-  const groupOption: GroupOption = {};
+  const groupOption: TGroupOption = {};
   options.forEach((option) => {
     const key = (option[groupBy] as string) || "";
     if (!groupOption[key]) {
@@ -150,7 +151,7 @@ function Combobox({
   commandProps,
   inputProps,
   ref,
-}: ComboboxProps) {
+}: TComboboxProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -158,7 +159,7 @@ function Combobox({
   const [open, setOpen] = useState(false);
   const [onScrollbar, setOnScrollbar] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [selected, setSelected] = useState<Option | undefined>(value);
+  const [selected, setSelected] = useState<TOption | undefined>(value);
   const [inputValue, setInputValue] = useState("");
 
   // Initialize options with memoized default options
@@ -167,7 +168,7 @@ function Combobox({
     [arrayDefaultOptions, groupBy],
   );
 
-  const [options, setOptions] = useState<GroupOption>(initialOptions);
+  const [options, setOptions] = useState<TGroupOption>(initialOptions);
   const debouncedSearchTerm = useDebounce(inputValue, delay);
 
   // Check if current input value exists in options

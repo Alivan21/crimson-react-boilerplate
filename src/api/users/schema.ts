@@ -5,7 +5,6 @@ import { z } from "zod";
  */
 export const createUserSchema = z.object({
   email: z
-    .string()
     .email("Invalid email format")
     .min(5, "Email must be at least 5 characters")
     .max(255, "Email cannot exceed 255 characters"),
@@ -31,7 +30,6 @@ export const createUserSchema = z.object({
  */
 export const updateUserSchema = z.object({
   email: z
-    .string()
     .email("Invalid email format")
     .min(5, "Email must be at least 5 characters")
     .max(255, "Email cannot exceed 255 characters")

@@ -1,9 +1,8 @@
 import { format } from "date-fns";
 import { Filter, X } from "lucide-react";
-import { useState, memo, useEffect } from "react";
 import { useSearchParams } from "react-router";
 import { Button } from "~/components/ui/button";
-import Combobox, { type Option } from "~/components/ui/combobox";
+import Combobox, { type TOption } from "~/components/ui/combobox";
 import { DateTimePicker } from "~/components/ui/datetime-picker";
 import {
   DropdownMenu,
@@ -21,9 +20,9 @@ export type FilterableColumn =
       title: string;
       type: "dropdown" | "combobox";
       placeholder?: string;
-      onSearch?: (value: string) => Promise<Option[]>;
+      onSearch?: (value: string) => Promise<TOption[]>;
       triggerSearchOnFocus?: boolean;
-      options?: Option[];
+      options?: TOption[];
       datePickerProps?: never;
     }
   | {
@@ -37,19 +36,19 @@ export type FilterableColumn =
       };
     };
 
-interface DataTableFiltersProps<TData> {
+type TDataTableFiltersProps<TData> = {
   table: Table<TData>;
   filterableColumns: FilterableColumn[];
-}
+};
 
-export function DataTableFilters<TData>({ filterableColumns }: DataTableFiltersProps<TData>) {
+export function DataTableFilters<TData>({ filterableColumns }: TDataTableFiltersProps<TData>) {
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const handleDateChange = (
+  function handleDateChange(
     columnId: string,
     date: Date | undefined,
     granularity: "day" | "month" | "year" = "day",
-  ) => {
+  ) {
     const newParams = new URLSearchParams(searchParams);
     if (!date) {
       newParams.delete(columnId);
@@ -71,9 +70,9 @@ export function DataTableFilters<TData>({ filterableColumns }: DataTableFiltersP
     }
     newParams.set(columnId, formattedDate);
     setSearchParams(newParams);
-  };
+  }
 
-  const handleComboboxChange = (columnId: string, value: Option | undefined) => {
+  function handleComboboxChange(columnId: string, value: TOption | undefined) {
     const newParams = new URLSearchParams(searchParams);
     if (value) {
       newParams.set(columnId, value.value);
@@ -81,21 +80,22 @@ export function DataTableFilters<TData>({ filterableColumns }: DataTableFiltersP
       newParams.delete(columnId);
     }
     setSearchParams(newParams);
-  };
+  }
 
-  const getFilterValue = (columnId: string) => {
-    return searchParams.get(columnId) || undefined;
-  };
+  function getFilterValue(columnId: string): string | undefined {
+    return searchParams.get(columnId) ?? undefined;
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {filterableColumns.map((column) => {
         const currentValue = getFilterValue(column.id);
+
         if (column.type === "datepicker") {
-          let dateValue = undefined;
+          let dateValue: Date | undefined = undefined;
           if (currentValue) {
             const date = new Date(currentValue);
-            if (!isNaN(date.getTime())) {
+            if (!Number.isNaN(date.getTime())) {
               dateValue = date;
             }
           }
@@ -104,12 +104,12 @@ export function DataTableFilters<TData>({ filterableColumns }: DataTableFiltersP
             <div className="relative w-full min-w-28 sm:w-auto" key={column.id}>
               <DateTimePicker
                 className="min-w-52"
-                granularity={column.datePickerProps?.granularity || "day"}
-                key={currentValue || "empty"}
+                granularity={column.datePickerProps?.granularity ?? "day"}
+                key={currentValue ?? "empty"}
                 onChange={(date) => {
-                  handleDateChange(column.id, date, column.datePickerProps?.granularity || "day");
+                  handleDateChange(column.id, date, column.datePickerProps?.granularity ?? "day");
                 }}
-                placeholder={column.placeholder || `Filter by ${column.title}`}
+                placeholder={column.placeholder ?? `Filter by ${column.title}`}
                 value={dateValue}
               />
               {dateValue && (
@@ -128,12 +128,22 @@ export function DataTableFilters<TData>({ filterableColumns }: DataTableFiltersP
         }
 
         if (column.type === "combobox") {
+          // Derive selected option dari currentValue - tidak perlu state management
+          const selectedOption =
+            currentValue !== undefined
+              ? column.options?.find((option) => option.value === currentValue)
+              : undefined;
+
           return (
-            <div className="w-full min-w-28 sm:w-auto" key={`${column.id}-container`}>
-              <ComboboxFilter
-                column={column}
-                currentValue={currentValue}
-                handleChange={handleComboboxChange}
+            <div className="w-full min-w-28 sm:w-auto" key={column.id}>
+              <Combobox
+                defaultOptions={column.options}
+                delay={500}
+                onChange={(value) => handleComboboxChange(column.id, value)}
+                onSearch={column.onSearch}
+                placeholder={column.placeholder ?? `Filter by ${column.title}`}
+                triggerSearchOnFocus={column.triggerSearchOnFocus ?? true}
+                value={selectedOption}
               />
             </div>
           );
@@ -174,52 +184,3 @@ export function DataTableFilters<TData>({ filterableColumns }: DataTableFiltersP
     </div>
   );
 }
-
-const ComboboxFilter = memo(
-  ({
-    column,
-    currentValue,
-    handleChange,
-  }: {
-    column: FilterableColumn;
-    currentValue: string | undefined;
-    handleChange: (columnId: string, value: Option | undefined) => void;
-  }) => {
-    const [selectedOption, setSelectedOption] = useState<Option | undefined>(
-      currentValue !== undefined
-        ? column.options?.find((option) => option.value === currentValue)
-        : undefined,
-    );
-
-    useEffect(() => {
-      const newOption =
-        currentValue !== undefined
-          ? column.options?.find((option) => option.value === currentValue)
-          : undefined;
-      setSelectedOption(newOption);
-    }, [currentValue, column.options]);
-
-    if (column.type !== "combobox" && column.type !== "dropdown") {
-      return null;
-    }
-
-    return (
-      <Combobox
-        defaultOptions={column.options}
-        delay={500}
-        onChange={(value) => {
-          setSelectedOption(value);
-          handleChange(column.id, value);
-        }}
-        onSearch={column.onSearch}
-        placeholder={column.placeholder || `Filter by ${column.title}`}
-        triggerSearchOnFocus={column.triggerSearchOnFocus || true}
-        value={selectedOption}
-      />
-    );
-  },
-  (prevProps, nextProps) => {
-    return prevProps.currentValue === nextProps.currentValue;
-  },
-);
-ComboboxFilter.displayName = "ComboboxFilter";

@@ -5,7 +5,7 @@ import { login, logout } from "~/api/auth";
 import type { TLoginRequest } from "~/api/auth/schema";
 import { QUERY_KEY } from "~/common/constants/query-keys";
 import { ROUTES } from "~/common/constants/routes";
-import type { UserData } from "~/common/types/user-data";
+import type { TUserData } from "~/common/types/user-data";
 import { useSessionCookies } from "~/hooks/shared/use-session-cookies";
 import { httpClient, registerSignOutCallback, unregisterSignOutCallback } from "~/libs/axios";
 import { queryClient } from "~/libs/tanstack-query/query-client";
@@ -13,7 +13,7 @@ import { decodeJwt } from "~/utils/jwt";
 
 type SessionContextType = {
   isAuthenticated: boolean;
-  user: UserData | null;
+  user: TUserData | null;
   token: string | null;
   isLoading: boolean;
   signIn: (credential: TLoginRequest) => Promise<void>;
@@ -37,7 +37,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
   } = useSessionCookies();
 
   const [isAuthenticated, setIsAuthenticated] = React.useState<boolean>(false);
-  const [user, setUser] = React.useState<UserData | null>(null);
+  const [user, setUser] = React.useState<TUserData | null>(null);
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [isInitialized, setIsInitialized] = React.useState<boolean>(false);
@@ -52,7 +52,7 @@ export function SessionProvider({ children }: SessionProviderProps) {
   const setAuthState = React.useCallback(
     (tokenValue: string) => {
       try {
-        const userData = decodeJwt<UserData>(tokenValue);
+        const userData = decodeJwt<TUserData>(tokenValue);
 
         if (userData.exp && userData.exp < Math.floor(Date.now() / 1000)) {
           clearAuthState();

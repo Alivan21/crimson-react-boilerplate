@@ -3,21 +3,27 @@ import { useMatches, useNavigate } from "react-router";
 import { usePermissionsQuery } from "~/hooks/api/auth/use-permissions";
 import { Button } from "../ui/button";
 
-interface PermissionGuardProps {
+type TPermissionGuardProps = {
   children: React.ReactNode;
   fallbackComponent?: React.ComponentType;
-}
+};
+
+type TMatchesPermission = {
+  handle?: {
+    permission?: string;
+  };
+};
 
 export default function PermissionGuard({
   children,
   fallbackComponent: FallbackComponent,
-}: PermissionGuardProps) {
-  const matches = useMatches();
+}: TPermissionGuardProps) {
+  const matches = useMatches() as TMatchesPermission[];
   const navigate = useNavigate();
   const { data: permissionsData, isLoading, isError, error } = usePermissionsQuery();
 
   const currentMatch = matches[matches.length - 1];
-  const requiredPermission = (currentMatch?.handle as { permission?: string })?.permission;
+  const requiredPermission = currentMatch?.handle?.permission;
 
   const permissions = (permissionsData?.data as string[]) || [];
 

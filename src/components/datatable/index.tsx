@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useSearchParams } from "react-router";
 import {
   Table,
@@ -33,6 +33,7 @@ import { DataTableViewOptions } from "./view-options";
 export type TableColumnDef<TData, TValue = unknown> = ColumnDef<TData, TValue> & {
   width?: number;
 };
+
 type DataTableProps<TData, TValue> = {
   columns: TableColumnDef<TData, TValue>[];
   data: TData[];
@@ -65,64 +66,42 @@ export function DataTable<TData, TValue>({
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
-    initialColumnVisibility || {},
+    initialColumnVisibility ?? {},
   );
 
-  const updateUrl = useCallback(
-    (newParams: Record<string, string | number | null>) => {
-      setSearchParams(
-        (prevParams) => {
-          const params = new URLSearchParams(prevParams.toString());
-          for (const [key, value] of Object.entries(newParams)) {
-            if (value === null) {
-              params.delete(key);
-            } else {
-              params.set(key, value.toString());
-            }
+  function updateUrl(newParams: Record<string, string | number | null>) {
+    setSearchParams(
+      (prevParams) => {
+        const params = new URLSearchParams(prevParams.toString());
+        for (const [key, value] of Object.entries(newParams)) {
+          if (value === null) {
+            params.delete(key);
+          } else {
+            params.set(key, value.toString());
           }
-
-          return params;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
-  useEffect(() => {
-    const initialFilters: ColumnFiltersState = [];
-
-    filterableColumns.forEach((column) => {
-      const paramValue = searchParams.get(column.id);
-      if (paramValue) {
-        initialFilters.push({
-          id: column.id,
-          value: paramValue,
-        });
-      }
-    });
-
-    if (initialFilters.length > 0) {
-      setColumnFilters(initialFilters);
-    }
-  }, [searchParams, filterableColumns]);
+        }
+        return params;
+      },
+      { replace: true },
+    );
+  }
 
   const table = useReactTable({
     data,
     columns,
-    pageCount: pageCount,
+    pageCount,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       pagination: {
-        pageIndex: Number(searchParams.get("page") || "1") - 1,
-        pageSize: Number(searchParams.get("limit") || "10"),
+        pageIndex: Number(searchParams.get("page") ?? "1") - 1,
+        pageSize: Number(searchParams.get("limit") ?? "10"),
       },
     },
     onSortingChange: (newSorting) => {
       setSorting(newSorting);
-      const sortingState = newSorting as SortingState;
+      const sortingState = typeof newSorting === "function" ? newSorting(sorting) : newSorting;
 
       if (sortingState.length > 0) {
         updateUrl({
@@ -150,7 +129,7 @@ export function DataTable<TData, TValue>({
         } else if (filter.value instanceof Date) {
           const column = filterableColumns.find((col) => col.id === filter.id);
           if (column?.type === "datepicker") {
-            const granularity = column.datePickerProps?.granularity || "day";
+            const granularity = column.datePickerProps?.granularity ?? "day";
             switch (granularity) {
               case "year":
                 updatedParams[filter.id] = format(filter.value, "yyyy");
@@ -177,8 +156,7 @@ export function DataTable<TData, TValue>({
         }
       });
 
-      const oldFiltersArray = columnFilters;
-      oldFiltersArray.forEach((filter) => {
+      columnFilters.forEach((filter) => {
         if (!filtersArray.find((f) => f.id === filter.id)) {
           updatedParams[filter.id] = null;
         }
@@ -205,16 +183,9 @@ export function DataTable<TData, TValue>({
     manualFiltering: true,
   });
 
-  const handleSearch = useCallback(
-    (value: string) => {
-      if (value) {
-        updateUrl({ search: value });
-      } else {
-        updateUrl({ search: null });
-      }
-    },
-    [updateUrl],
-  );
+  function handleSearch(value: string) {
+    updateUrl({ search: value || null });
+  }
 
   if (isError) {
     return <div>Error loading data</div>;
@@ -225,7 +196,7 @@ export function DataTable<TData, TValue>({
       <div className="flex flex-col gap-2">
         <div className="flex flex-col justify-between gap-4 sm:flex-row">
           <SearchInput
-            initialValue={searchParams.get("search") || ""}
+            initialValue={searchParams.get("search") ?? ""}
             onSearch={handleSearch}
             placeholder={`Search by ${searchColumn}...`}
           />

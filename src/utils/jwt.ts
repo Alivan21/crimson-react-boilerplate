@@ -1,4 +1,4 @@
-export interface JwtPayload {
+export type TJwtPayload = {
   iss?: string; // issuer
   sub?: string; // subject
   aud?: string | string[]; // audience
@@ -7,9 +7,9 @@ export interface JwtPayload {
   iat?: number; // issued at
   jti?: string; // JWT ID
   [key: string]: unknown; // allow for additional properties
-}
+};
 
-export const decodeJwt = <T extends JwtPayload = JwtPayload>(token: string): T => {
+export const decodeJwt = <T extends TJwtPayload = TJwtPayload>(token: string): T => {
   if (!token || typeof token !== "string") {
     throw new Error("Invalid token: token must be a non-empty string");
   }
