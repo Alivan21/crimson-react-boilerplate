@@ -1,4 +1,5 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { type TPaginatedMeta } from "~/common/types/base-response";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -11,16 +12,14 @@ import type { Table } from "@tanstack/react-table";
 
 type TDataTablePaginationProps<TData> = {
   table: Table<TData>;
-  totalCount: number;
+  meta?: TPaginatedMeta;
 };
 
 const PAGE_SIZES = [10, 20, 30, 40, 50] as const;
 
-export function DataTablePagination<TData>({
-  table,
-  totalCount,
-}: TDataTablePaginationProps<TData>) {
+export function DataTablePagination<TData>({ table, meta }: TDataTablePaginationProps<TData>) {
   const { pageIndex, pageSize } = table.getState().pagination;
+  const totalCount = meta?.total || 0;
   const startEntry = pageIndex * pageSize + 1;
   const endEntry = Math.min((pageIndex + 1) * pageSize, totalCount);
 

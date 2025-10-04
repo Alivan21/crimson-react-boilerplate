@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
+import { type TPaginatedMeta } from "~/common/types/base-response";
 import {
   Table,
   TableBody,
@@ -36,14 +37,15 @@ export type TableColumnDef<TData, TValue = unknown> = ColumnDef<TData, TValue> &
 
 type DataTableProps<TData, TValue> = {
   columns: TableColumnDef<TData, TValue>[];
-  data: TData[];
+  data?: TData[];
   isLoading: boolean;
   isError: boolean;
-  totalCount: number;
-  pageCount: number;
+  meta?: TPaginatedMeta;
   searchColumn?: string;
   filterableColumns?: FilterableColumn[];
   initialColumnVisibility?: VisibilityState;
+  showSearch?: boolean;
+  showViewOptions?: boolean;
 };
 
 function getColumnWidth<TData, TValue = unknown>(columnDef: TableColumnDef<TData, TValue>): string {
@@ -55,12 +57,14 @@ export function DataTable<TData, TValue>({
   data,
   isLoading,
   isError,
-  totalCount,
-  pageCount,
+  meta,
   searchColumn = "name",
   filterableColumns = [],
   initialColumnVisibility,
+  showSearch = true,
+  showViewOptions = true,
 }: DataTableProps<TData, TValue>) {
+  const safeData = data ?? [];
   const { state } = useSidebar();
   const [searchParams, setSearchParams] = useSearchParams();
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -184,9 +188,9 @@ export function DataTable<TData, TValue>({
   }
 
   const table = useReactTable({
-    data,
+    data: safeData,
     columns,
-    pageCount,
+    pageCount: meta?.total_page || 0,
     state: {
       sorting,
       columnFilters,
@@ -221,14 +225,18 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       <div className="flex flex-col gap-2">
         <div className="flex flex-col justify-between gap-4 sm:flex-row">
-          <SearchInput
-            initialValue={searchParams.get("search") ?? ""}
-            onSearch={handleSearch}
-            placeholder={`Search by ${searchColumn}...`}
-          />
-          <div className="flex justify-end">
-            <DataTableViewOptions table={table} />
-          </div>
+          {showSearch && (
+            <SearchInput
+              initialValue={searchParams.get("search") ?? ""}
+              onSearch={handleSearch}
+              placeholder={`Search by ${searchColumn}...`}
+            />
+          )}
+          {showViewOptions && (
+            <div className="flex justify-end">
+              <DataTableViewOptions table={table} />
+            </div>
+          )}
         </div>
 
         {filterableColumns.length > 0 && (
@@ -329,7 +337,7 @@ export function DataTable<TData, TValue>({
         </Table>
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
-      <DataTablePagination table={table} totalCount={totalCount} />
+      <DataTablePagination meta={meta} table={table} />
     </div>
   );
 }

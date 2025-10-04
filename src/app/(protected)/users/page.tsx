@@ -156,13 +156,12 @@ export default function Component() {
     <PageContainer breadcrumbs={breadcrumbs} title="User Management" topActions={<TopAction />}>
       <DataTable
         columns={columns}
-        data={data?.data || []}
+        data={data?.data}
         filterableColumns={FILTER_CONFIG}
         isError={isError}
         isLoading={isLoading}
-        pageCount={data?.meta?.total_page || 0}
+        meta={data?.meta}
         searchColumn="name"
-        totalCount={data?.meta?.total || 0}
       />
       <ConfirmDialog
         cancelText="Cancel"
@@ -183,7 +182,7 @@ const TopAction = () => {
     <div className="flex gap-2">
       <Button variant="outline">Import</Button>
       <Button variant="success">Export</Button>
-      <Button asChild variant="link">
+      <Button asChild>
         <Link className="w-full" to={ROUTES.USERS.CREATE}>
           New User
         </Link>
