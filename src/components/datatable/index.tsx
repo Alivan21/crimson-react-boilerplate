@@ -12,7 +12,7 @@ import {
 } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useSearchParams } from "react-router";
 import {
   Table,
@@ -69,21 +69,118 @@ export function DataTable<TData, TValue>({
     initialColumnVisibility ?? {},
   );
 
-  function updateUrl(newParams: Record<string, string | number | null>) {
-    setSearchParams(
-      (prevParams) => {
-        const params = new URLSearchParams(prevParams.toString());
-        for (const [key, value] of Object.entries(newParams)) {
-          if (value === null) {
-            params.delete(key);
-          } else {
-            params.set(key, value.toString());
+  // Memoize pagination state parsing - prevents re-parsing URL params on every render
+  const paginationState = useMemo(
+    () => ({
+      pageIndex: Number(searchParams.get("page") ?? "1") - 1,
+      pageSize: Number(searchParams.get("limit") ?? "10"),
+    }),
+    [searchParams],
+  );
+
+  const updateUrl = useCallback(
+    (newParams: Record<string, string | number | null>) => {
+      setSearchParams(
+        (prevParams) => {
+          const params = new URLSearchParams(prevParams.toString());
+          for (const [key, value] of Object.entries(newParams)) {
+            if (value === null) {
+              params.delete(key);
+            } else {
+              params.set(key, value.toString());
+            }
           }
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  function handleSortingChange(newSorting: SortingState | ((old: SortingState) => SortingState)) {
+    setSorting(newSorting);
+    const sortingState = typeof newSorting === "function" ? newSorting(sorting) : newSorting;
+
+    if (sortingState.length > 0) {
+      updateUrl({
+        sort: sortingState[0].id,
+        order: sortingState[0].desc ? "desc" : "asc",
+      });
+    } else {
+      updateUrl({
+        sort: null,
+        order: null,
+      });
+    }
+  }
+
+  function handleColumnFiltersChange(
+    newFilters: ColumnFiltersState | ((old: ColumnFiltersState) => ColumnFiltersState),
+  ) {
+    setColumnFilters(newFilters);
+
+    const filtersArray = typeof newFilters === "function" ? newFilters(columnFilters) : newFilters;
+
+    const updatedParams: Record<string, string | number | null> = {};
+
+    filtersArray.forEach((filter) => {
+      if (filter.value === null || filter.value === undefined) {
+        updatedParams[filter.id] = null;
+      } else if (filter.value instanceof Date) {
+        const column = filterableColumns.find((col) => col.id === filter.id);
+        if (column?.type === "datepicker") {
+          const granularity = column.datePickerProps?.granularity ?? "day";
+          switch (granularity) {
+            case "year":
+              updatedParams[filter.id] = format(filter.value, "yyyy");
+              break;
+            case "month":
+              updatedParams[filter.id] = format(filter.value, "yyyy-MM");
+              break;
+            case "day":
+            default:
+              updatedParams[filter.id] = format(filter.value, "yyyy-MM-dd");
+              break;
+          }
+        } else {
+          updatedParams[filter.id] = format(filter.value, "yyyy-MM-dd");
         }
-        return params;
-      },
-      { replace: true },
-    );
+      } else if (
+        typeof filter.value === "string" ||
+        typeof filter.value === "number" ||
+        typeof filter.value === "boolean"
+      ) {
+        updatedParams[filter.id] = String(filter.value);
+      } else {
+        updatedParams[filter.id] = JSON.stringify(filter.value);
+      }
+    });
+
+    columnFilters.forEach((filter) => {
+      if (!filtersArray.find((f) => f.id === filter.id)) {
+        updatedParams[filter.id] = null;
+      }
+    });
+
+    updateUrl(updatedParams);
+  }
+
+  function handlePaginationChange(
+    updater:
+      | ((old: { pageIndex: number; pageSize: number }) => {
+          pageIndex: number;
+          pageSize: number;
+        })
+      | { pageIndex: number; pageSize: number },
+  ) {
+    if (typeof updater === "function") {
+      const newPagination = updater(paginationState);
+      updateUrl({
+        page: newPagination.pageIndex + 1 > 1 ? newPagination.pageIndex + 1 : null,
+        limit: newPagination.pageSize,
+      });
+    }
   }
 
   const table = useReactTable({
@@ -94,86 +191,12 @@ export function DataTable<TData, TValue>({
       sorting,
       columnFilters,
       columnVisibility,
-      pagination: {
-        pageIndex: Number(searchParams.get("page") ?? "1") - 1,
-        pageSize: Number(searchParams.get("limit") ?? "10"),
-      },
+      pagination: paginationState,
     },
-    onSortingChange: (newSorting) => {
-      setSorting(newSorting);
-      const sortingState = typeof newSorting === "function" ? newSorting(sorting) : newSorting;
-
-      if (sortingState.length > 0) {
-        updateUrl({
-          sort: sortingState[0].id,
-          order: sortingState[0].desc ? "desc" : "asc",
-        });
-      } else {
-        updateUrl({
-          sort: null,
-          order: null,
-        });
-      }
-    },
-    onColumnFiltersChange: (newFilters) => {
-      setColumnFilters(newFilters);
-
-      const filtersArray =
-        typeof newFilters === "function" ? newFilters(columnFilters) : newFilters;
-
-      const updatedParams: Record<string, string | number | null> = {};
-
-      filtersArray.forEach((filter) => {
-        if (filter.value === null || filter.value === undefined) {
-          updatedParams[filter.id] = null;
-        } else if (filter.value instanceof Date) {
-          const column = filterableColumns.find((col) => col.id === filter.id);
-          if (column?.type === "datepicker") {
-            const granularity = column.datePickerProps?.granularity ?? "day";
-            switch (granularity) {
-              case "year":
-                updatedParams[filter.id] = format(filter.value, "yyyy");
-                break;
-              case "month":
-                updatedParams[filter.id] = format(filter.value, "yyyy-MM");
-                break;
-              case "day":
-              default:
-                updatedParams[filter.id] = format(filter.value, "yyyy-MM-dd");
-                break;
-            }
-          } else {
-            updatedParams[filter.id] = format(filter.value, "yyyy-MM-dd");
-          }
-        } else if (
-          typeof filter.value === "string" ||
-          typeof filter.value === "number" ||
-          typeof filter.value === "boolean"
-        ) {
-          updatedParams[filter.id] = String(filter.value);
-        } else {
-          updatedParams[filter.id] = JSON.stringify(filter.value);
-        }
-      });
-
-      columnFilters.forEach((filter) => {
-        if (!filtersArray.find((f) => f.id === filter.id)) {
-          updatedParams[filter.id] = null;
-        }
-      });
-
-      updateUrl(updatedParams);
-    },
+    onSortingChange: handleSortingChange,
+    onColumnFiltersChange: handleColumnFiltersChange,
     onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: (updater) => {
-      if (typeof updater === "function") {
-        const newPagination = updater(table.getState().pagination);
-        updateUrl({
-          page: newPagination.pageIndex + 1 > 1 ? newPagination.pageIndex + 1 : null,
-          limit: newPagination.pageSize,
-        });
-      }
-    },
+    onPaginationChange: handlePaginationChange,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -183,9 +206,12 @@ export function DataTable<TData, TValue>({
     manualFiltering: true,
   });
 
-  function handleSearch(value: string) {
-    updateUrl({ search: value || null });
-  }
+  const handleSearch = useCallback(
+    (value: string) => {
+      updateUrl({ search: value || null });
+    },
+    [updateUrl],
+  );
 
   if (isError) {
     return <div>Error loading data</div>;
@@ -232,7 +258,7 @@ export function DataTable<TData, TValue>({
                       <div>
                         {header.column.columnDef.enableSorting ? (
                           <button
-                            className="group hover:text-foreground flex cursor-pointer items-center gap-1.5"
+                            className="hover:text-foreground group flex cursor-pointer items-center gap-1.5"
                             onClick={() => {
                               // Cycle through sorting states: asc -> desc -> none
                               const currentSortDir = header.column.getIsSorted();

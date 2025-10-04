@@ -24,7 +24,7 @@ export default function LoginPage() {
     try {
       await signIn(data);
       toast.success("Login successful");
-      void navigate("/app/dashboard", { replace: true });
+      void navigate("/dashboard", { replace: true });
     } catch (error: unknown) {
       const { message } = error as TErrorResponse;
       toast.error(message);

@@ -18,44 +18,35 @@ export const handle = {
   permission: "user:read",
 };
 
-export default function Component() {
-  const breadcrumbs: BreadcrumbsItem[] = [
-    {
-      text: "Users",
-      url: ROUTES.USERS.LIST,
+const FILTER_CONFIG: FilterableColumn[] = [
+  {
+    id: "status",
+    title: "Status",
+    type: "combobox",
+    options: [
+      { label: "Active", value: "active" },
+      { label: "Inactive", value: "inactive" },
+    ],
+  },
+  {
+    id: "created_at",
+    title: "Created At",
+    type: "datepicker",
+    placeholder: "Filter by Created At",
+  },
+  {
+    id: "updated_at",
+    title: "Updated At",
+    type: "datepicker",
+    datePickerProps: {
+      granularity: "month",
     },
-  ];
+    placeholder: "Filter by Updated At",
+  },
+];
 
-  const { queryParams } = useQueryParams();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const deleteUserMutation = useDeleteUserMutation(selectedUserId);
-
-  const { data, isLoading, isError } = useUsersQuery({
-    ...queryParams,
-    page: queryParams.page,
-    limit: queryParams.limit,
-    search: queryParams.search,
-  });
-
-  const handleDeleteClick = (userId: string) => {
-    setSelectedUserId(userId);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleConfirmDelete = () => {
-    deleteUserMutation.mutate(undefined, {
-      onSuccess: () => {
-        toast.success("User deleted successfully");
-      },
-      onError: (error) => {
-        toast.error(error?.response?.data?.message || "Failed to delete user. Please try again.");
-      },
-    });
-    setDeleteDialogOpen(false);
-  };
-
-  const columns: TableColumnDef<TUserItem>[] = [
+function createUserColumns(onDelete: (userId: string) => void): TableColumnDef<TUserItem>[] {
+  return [
     {
       accessorKey: "no",
       header: "No",
@@ -113,51 +104,60 @@ export default function Component() {
               <Edit2 />
             </Link>
           </Button>
-          <Button
-            onClick={() => handleDeleteClick(items.row.original.id)}
-            size="sm"
-            variant="destructive"
-          >
+          <Button onClick={() => onDelete(items.row.original.id)} size="sm" variant="destructive">
             <Trash2 />
           </Button>
         </div>
       ),
     },
   ];
+}
 
-  const filterComponents: FilterableColumn[] = [
+export default function Component() {
+  const breadcrumbs: BreadcrumbsItem[] = [
     {
-      id: "status",
-      title: "Status",
-      type: "combobox",
-      options: [
-        { label: "Active", value: "active" },
-        { label: "Inactive", value: "inactive" },
-      ],
-    },
-    {
-      id: "created_at",
-      title: "Created At",
-      type: "datepicker",
-      placeholder: "Filter by Created At",
-    },
-    {
-      id: "updated_at",
-      title: "Updated At",
-      type: "datepicker",
-      datePickerProps: {
-        granularity: "month",
-      },
-      placeholder: "Filter by Updated At",
+      text: "Users",
+      url: ROUTES.USERS.LIST,
     },
   ];
+
+  const { queryParams } = useQueryParams();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string>("");
+  const deleteUserMutation = useDeleteUserMutation(selectedUserId);
+
+  const { data, isLoading, isError } = useUsersQuery({
+    ...queryParams,
+    page: queryParams.page,
+    limit: queryParams.limit,
+    search: queryParams.search,
+  });
+
+  function handleDeleteClick(userId: string) {
+    setSelectedUserId(userId);
+    setDeleteDialogOpen(true);
+  }
+
+  function handleConfirmDelete() {
+    deleteUserMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast.success("User deleted successfully");
+      },
+      onError: (error) => {
+        toast.error(error?.response?.data?.message || "Failed to delete user. Please try again.");
+      },
+    });
+    setDeleteDialogOpen(false);
+  }
+
+  const columns = createUserColumns(handleDeleteClick);
 
   return (
     <PageContainer breadcrumbs={breadcrumbs} title="User Management" topActions={<TopAction />}>
       <DataTable
         columns={columns}
         data={data?.data || []}
-        filterableColumns={filterComponents}
+        filterableColumns={FILTER_CONFIG}
         isError={isError}
         isLoading={isLoading}
         pageCount={data?.meta?.total_page || 0}
@@ -183,7 +183,7 @@ const TopAction = () => {
     <div className="flex gap-2">
       <Button variant="outline">Import</Button>
       <Button variant="success">Export</Button>
-      <Button asChild>
+      <Button asChild variant="link">
         <Link className="w-full" to={ROUTES.USERS.CREATE}>
           New User
         </Link>

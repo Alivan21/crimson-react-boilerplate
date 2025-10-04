@@ -125,7 +125,7 @@ export function DashboardSidebar() {
           user={{
             name: "John Doe",
             email: "john@example.com",
-            avatar: "/placeholder.png",
+            avatar: "",
           }}
         />
       </SidebarFooter>

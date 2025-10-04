@@ -1,6 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { useFetcher } from "react-router";
-import type { loader as sessionLoader } from "~/app/api/session/route";
+import type { loader as sessionLoader } from "~/app/api/session/get/route";
 
 /**
  * Custom hook for managing session cookies
@@ -18,7 +18,7 @@ export function useSessionCookies() {
     if (sessionFetcher.state === "loading") {
       return sessionFetcher.data;
     }
-    await sessionFetcher.load("/api/session");
+    await sessionFetcher.load("/api/session/get");
     return sessionFetcher.data;
   }, [sessionFetcher]);
 
@@ -38,7 +38,7 @@ export function useSessionCookies() {
         { token },
         {
           method: "post",
-          action: "/api/login",
+          action: "/api/session/create",
         },
       );
     },
@@ -53,7 +53,7 @@ export function useSessionCookies() {
   const destroySession = useCallback(async () => {
     return actionFetcher.submit(null, {
       method: "post",
-      action: "/api/session",
+      action: "/api/session/destroy",
     });
   }, [actionFetcher]);
 

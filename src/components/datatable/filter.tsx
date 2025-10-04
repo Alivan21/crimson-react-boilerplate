@@ -128,7 +128,6 @@ export function DataTableFilters<TData>({ filterableColumns }: TDataTableFilters
         }
 
         if (column.type === "combobox") {
-          // Derive selected option dari currentValue - tidak perlu state management
           const selectedOption =
             currentValue !== undefined
               ? column.options?.find((option) => option.value === currentValue)

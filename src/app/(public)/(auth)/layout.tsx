@@ -5,7 +5,7 @@ import type { Route } from "./+types/layout";
 export async function loader({ request }: Route.LoaderArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   if (session.data.token) {
-    return redirect("/app/dashboard", {
+    return redirect("/dashboard", {
       status: 302,
     });
   }

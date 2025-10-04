@@ -96,14 +96,14 @@ A modern, production-ready full-stack React boilerplate built with React Router 
 
 ### User Management
 
-- **View Users**: Navigate to `/app/users` to see the user list
-- **Create User**: Click "Create User" or go to `/app/users/create`
+- **View Users**: Navigate to `/users` to see the user list
+- **Create User**: Click "Create User" or go to `/users/create`
 - **Edit User**: Click on any user in the table to edit
 - **Filter & Search**: Use the built-in filters and search functionality
 
 ### Dashboard
 
-- Access the main dashboard at `/app/dashboard`
+- Access the main dashboard at `/dashboard`
 - View analytics and reports (coming soon)
 - Navigate through the sidebar menu
 
