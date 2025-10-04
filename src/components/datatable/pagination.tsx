@@ -25,7 +25,7 @@ export function DataTablePagination<TData>({ table, meta }: TDataTablePagination
 
   return (
     <div className="flex flex-col items-center justify-between gap-4 px-2 lg:flex-row">
-      <div className="text-muted-foreground text-sm">
+      <div className="text-muted-foreground order-2 text-sm sm:order-1">
         {totalCount > 0 ? (
           <>
             Showing {startEntry} to {endEntry} of {totalCount} entries
@@ -34,8 +34,8 @@ export function DataTablePagination<TData>({ table, meta }: TDataTablePagination
           "No results"
         )}
       </div>
-      <div className="flex items-center space-x-6 lg:space-x-8">
-        <div className="flex items-center space-x-2">
+      <div className="order-1 flex flex-wrap items-center justify-center gap-4 sm:order-2">
+        <div className="order-2 flex items-center gap-2 sm:order-1">
           <p className="text-sm font-medium">Rows per page</p>
           <Select
             onValueChange={(value) => {
@@ -55,7 +55,7 @@ export function DataTablePagination<TData>({ table, meta }: TDataTablePagination
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="order-1 flex items-center gap-2 sm:order-2">
           <Button
             className="hidden h-8 w-8 p-0 lg:flex"
             disabled={!table.getCanPreviousPage()}

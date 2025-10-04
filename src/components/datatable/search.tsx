@@ -1,3 +1,4 @@
+import { SearchIcon } from "lucide-react";
 import { useState, useEffect, memo } from "react";
 import { Input } from "~/components/ui/input";
 import { useDebounce } from "~/hooks/shared/use-debounce";
@@ -33,9 +34,10 @@ export const SearchInput = memo(function SearchInput({
   const isPending = searchValue !== debouncedSearchValue;
 
   return (
-    <div className="relative w-full min-w-2xs sm:max-w-sm">
+    <div className="relative w-full">
+      <SearchIcon className="text-muted-foreground absolute top-1/2 left-3 size-4 shrink-0 -translate-y-1/2" />
       <Input
-        className="bg-background/70 border-muted focus-visible:bg-background w-full transition-colors"
+        className="bg-background/70 border-muted focus-visible:bg-background w-full pr-10 pl-10 transition-colors"
         onChange={(e) => setSearchValue(e.target.value)}
         placeholder={placeholder}
         value={searchValue}

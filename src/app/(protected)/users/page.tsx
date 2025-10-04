@@ -153,7 +153,12 @@ export default function Component() {
   const columns = createUserColumns(handleDeleteClick);
 
   return (
-    <PageContainer breadcrumbs={breadcrumbs} title="User Management" topActions={<TopAction />}>
+    <PageContainer
+      breadcrumbs={breadcrumbs}
+      description="User management page"
+      title="User Management"
+      topActions={<TopAction />}
+    >
       <DataTable
         columns={columns}
         data={data?.data}
@@ -183,9 +188,7 @@ const TopAction = () => {
       <Button variant="outline">Import</Button>
       <Button variant="success">Export</Button>
       <Button asChild>
-        <Link className="w-full" to={ROUTES.USERS.CREATE}>
-          New User
-        </Link>
+        <Link to={ROUTES.USERS.CREATE}>New User</Link>
       </Button>
     </div>
   );

@@ -15,7 +15,6 @@ type TDataTableViewOptionsProps<TData> = {
 };
 
 export function DataTableViewOptions<TData>({ table }: TDataTableViewOptionsProps<TData>) {
-  // Hanya ambil columns yang bisa di-hide dan punya accessor
   const toggleableColumns = table
     .getAllColumns()
     .filter((column) => typeof column.accessorFn !== "undefined" && column.getCanHide());
@@ -23,12 +22,12 @@ export function DataTableViewOptions<TData>({ table }: TDataTableViewOptionsProp
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button className="ml-auto h-9" size="sm" variant="outline">
+        <Button className="h-9 w-full" size="sm" variant="outline">
           <SlidersHorizontal className="mr-2 h-4 w-4" />
           View
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[150px]">
+      <DropdownMenuContent align="start" className="w-[150px]">
         <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {toggleableColumns.map((column) => (

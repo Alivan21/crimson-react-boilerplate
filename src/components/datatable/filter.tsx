@@ -6,8 +6,8 @@ import Combobox, { type TOption } from "~/components/ui/combobox";
 import { DateTimePicker } from "~/components/ui/datetime-picker";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -86,100 +86,126 @@ export function DataTableFilters<TData>({ filterableColumns }: TDataTableFilters
     return searchParams.get(columnId) ?? undefined;
   }
 
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {filterableColumns.map((column) => {
-        const currentValue = getFilterValue(column.id);
+  const activeFilterCount = filterableColumns.filter((column) => getFilterValue(column.id)).length;
 
-        if (column.type === "datepicker") {
-          let dateValue: Date | undefined = undefined;
-          if (currentValue) {
-            const date = new Date(currentValue);
-            if (!Number.isNaN(date.getTime())) {
-              dateValue = date;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button className="h-9 w-full" size="sm" variant="outline">
+          <Filter className="mr-2 h-4 w-4" />
+          Filter
+          {activeFilterCount > 0 && (
+            <span className="bg-primary text-primary-foreground ml-1 rounded-full px-1.5 py-0.5 text-xs">
+              {activeFilterCount}
+            </span>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="max-h-[70vh] w-80 overflow-y-auto">
+        <DropdownMenuLabel>Filter Options</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {filterableColumns.map((column) => {
+          const currentValue = getFilterValue(column.id);
+
+          if (column.type === "datepicker") {
+            let dateValue: Date | undefined = undefined;
+            if (currentValue) {
+              const date = new Date(currentValue);
+              if (!Number.isNaN(date.getTime())) {
+                dateValue = date;
+              }
             }
+
+            return (
+              <div className="p-2" key={column.id}>
+                <div className="mb-2 text-sm font-medium">{column.title}</div>
+                <div className="relative">
+                  <DateTimePicker
+                    className="w-full"
+                    granularity={column.datePickerProps?.granularity ?? "day"}
+                    key={currentValue ?? "empty"}
+                    onChange={(date) => {
+                      handleDateChange(
+                        column.id,
+                        date,
+                        column.datePickerProps?.granularity ?? "day",
+                      );
+                    }}
+                    placeholder={column.placeholder ?? `Filter by ${column.title}`}
+                    value={dateValue}
+                  />
+                  {dateValue && (
+                    <Button
+                      aria-label="Clear date filter"
+                      className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2"
+                      onClick={() => handleDateChange(column.id, undefined)}
+                      size="icon"
+                      variant="ghost"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          }
+
+          if (column.type === "combobox") {
+            const selectedOption =
+              currentValue !== undefined
+                ? column.options?.find((option) => option.value === currentValue)
+                : undefined;
+
+            return (
+              <div className="p-2" key={column.id}>
+                <div className="mb-2 text-sm font-medium">{column.title}</div>
+                <Combobox
+                  defaultOptions={column.options}
+                  delay={500}
+                  onChange={(value) => handleComboboxChange(column.id, value)}
+                  onSearch={column.onSearch}
+                  placeholder={column.placeholder ?? `Filter by ${column.title}`}
+                  triggerSearchOnFocus={column.triggerSearchOnFocus ?? true}
+                  value={selectedOption}
+                />
+              </div>
+            );
           }
 
           return (
-            <div className="relative w-full min-w-28 sm:w-auto" key={column.id}>
-              <DateTimePicker
-                className="min-w-52"
-                granularity={column.datePickerProps?.granularity ?? "day"}
-                key={currentValue ?? "empty"}
-                onChange={(date) => {
-                  handleDateChange(column.id, date, column.datePickerProps?.granularity ?? "day");
-                }}
-                placeholder={column.placeholder ?? `Filter by ${column.title}`}
-                value={dateValue}
-              />
-              {dateValue && (
-                <Button
-                  aria-label="Clear date filter"
-                  className="absolute top-1/2 right-1 h-6 w-6 -translate-y-1/2"
-                  onClick={() => handleDateChange(column.id, undefined)}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
+            <DropdownMenuItem className="p-0" key={column.id}>
+              <div className="w-full p-2">
+                <div className="mb-2 text-sm font-medium">{column.title}</div>
+                <div className="space-y-2">
+                  {column.options?.map((option) => (
+                    <Button
+                      className={`w-full justify-start ${
+                        currentValue === option.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-background"
+                      }`}
+                      key={option.value}
+                      onClick={() => {
+                        const newParams = new URLSearchParams(searchParams);
+                        if (currentValue === option.value) {
+                          newParams.delete(column.id);
+                        } else {
+                          newParams.set(column.id, option.value);
+                        }
+                        setSearchParams(newParams);
+                      }}
+                      size="sm"
+                      variant={currentValue === option.value ? "default" : "outline"}
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </DropdownMenuItem>
           );
-        }
-
-        if (column.type === "combobox") {
-          const selectedOption =
-            currentValue !== undefined
-              ? column.options?.find((option) => option.value === currentValue)
-              : undefined;
-
-          return (
-            <div className="w-full min-w-28 sm:w-auto" key={column.id}>
-              <Combobox
-                defaultOptions={column.options}
-                delay={500}
-                onChange={(value) => handleComboboxChange(column.id, value)}
-                onSearch={column.onSearch}
-                placeholder={column.placeholder ?? `Filter by ${column.title}`}
-                triggerSearchOnFocus={column.triggerSearchOnFocus ?? true}
-                value={selectedOption}
-              />
-            </div>
-          );
-        }
-
-        return (
-          <DropdownMenu key={column.id}>
-            <DropdownMenuTrigger asChild>
-              <Button className="h-9 w-full min-w-28 sm:w-auto" size="sm" variant="outline">
-                <Filter className="mr-2 h-4 w-4" />
-                {column.title}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>{column.title}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {column.options?.map((option) => (
-                <DropdownMenuCheckboxItem
-                  checked={currentValue === option.value}
-                  key={option.value}
-                  onCheckedChange={() => {
-                    const newParams = new URLSearchParams(searchParams);
-                    if (currentValue === option.value) {
-                      newParams.delete(column.id);
-                    } else {
-                      newParams.set(column.id, option.value);
-                    }
-                    setSearchParams(newParams);
-                  }}
-                >
-                  {option.label}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        );
-      })}
-    </div>
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
