@@ -23,7 +23,7 @@ export function DataTableViewOptions<TData>({ table }: TDataTableViewOptionsProp
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className="h-9 w-full" size="sm" variant="outline">
-          <SlidersHorizontal className="mr-2 h-4 w-4" />
+          <SlidersHorizontal className="mr-1 h-4 w-4" />
           View
         </Button>
       </DropdownMenuTrigger>

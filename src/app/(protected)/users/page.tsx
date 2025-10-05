@@ -1,11 +1,9 @@
 import { Edit2, Eye, Trash2 } from "lucide-react";
-import { useState } from "react";
-import toast from "react-hot-toast";
 import { Link } from "react-router";
 import { type TUserItem } from "~/api/users/type";
 import { ROUTES } from "~/common/constants/routes";
 import { type BreadcrumbsItem } from "~/components/breadcrumbs";
-import ConfirmDialog from "~/components/confirm-dialog";
+import { confirmDelete } from "~/components/confirm-delete";
 import { DataTable, type TableColumnDef } from "~/components/datatable";
 import { type FilterableColumn } from "~/components/datatable/filter";
 import PageContainer from "~/components/providers/page-container";
@@ -17,33 +15,6 @@ import { useQueryParams } from "~/hooks/shared/use-query-params";
 export const handle = {
   permission: "user:read",
 };
-
-const FILTER_CONFIG: FilterableColumn[] = [
-  {
-    id: "status",
-    title: "Status",
-    type: "combobox",
-    options: [
-      { label: "Active", value: "active" },
-      { label: "Inactive", value: "inactive" },
-    ],
-  },
-  {
-    id: "created_at",
-    title: "Created At",
-    type: "datepicker",
-    placeholder: "Filter by Created At",
-  },
-  {
-    id: "updated_at",
-    title: "Updated At",
-    type: "datepicker",
-    datePickerProps: {
-      granularity: "month",
-    },
-    placeholder: "Filter by Updated At",
-  },
-];
 
 function createUserColumns(onDelete: (userId: string) => void): TableColumnDef<TUserItem>[] {
   return [
@@ -121,10 +92,35 @@ export default function Component() {
     },
   ];
 
+  const FILTER_CONFIG: FilterableColumn[] = [
+    {
+      id: "status",
+      title: "Status",
+      type: "combobox",
+      options: [
+        { label: "Active", value: "active" },
+        { label: "Inactive", value: "inactive" },
+      ],
+    },
+    {
+      id: "created_at",
+      title: "Created At",
+      type: "datepicker",
+      placeholder: "Filter by Created At",
+    },
+    {
+      id: "updated_at",
+      title: "Updated At",
+      type: "datepicker",
+      datePickerProps: {
+        granularity: "month",
+      },
+      placeholder: "Filter by Updated At",
+    },
+  ];
+
   const { queryParams } = useQueryParams();
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string>("");
-  const deleteUserMutation = useDeleteUserMutation(selectedUserId);
+  const deleteUserMutation = useDeleteUserMutation();
 
   const { data, isLoading, isError } = useUsersQuery({
     ...queryParams,
@@ -133,24 +129,17 @@ export default function Component() {
     search: queryParams.search,
   });
 
-  function handleDeleteClick(userId: string) {
-    setSelectedUserId(userId);
-    setDeleteDialogOpen(true);
-  }
-
-  function handleConfirmDelete() {
-    deleteUserMutation.mutate(undefined, {
-      onSuccess: () => {
-        toast.success("User deleted successfully");
-      },
-      onError: (error) => {
-        toast.error(error?.response?.data?.message || "Failed to delete user. Please try again.");
+  function handleConfirmDelete(id: string) {
+    confirmDelete.show({
+      title: "Delete User",
+      description: "Are you sure you want to delete this user? This action cannot be undone.",
+      onConfirm: () => {
+        deleteUserMutation.mutate(id);
       },
     });
-    setDeleteDialogOpen(false);
   }
 
-  const columns = createUserColumns(handleDeleteClick);
+  const columns = createUserColumns(handleConfirmDelete);
 
   return (
     <PageContainer
@@ -167,16 +156,6 @@ export default function Component() {
         isLoading={isLoading}
         meta={data?.meta}
         searchColumn="name"
-      />
-      <ConfirmDialog
-        cancelText="Cancel"
-        continueText="Delete"
-        description="Are you sure you want to delete this user? This action cannot be undone."
-        isDestructive
-        onContinue={handleConfirmDelete}
-        onOpenChange={setDeleteDialogOpen}
-        open={deleteDialogOpen}
-        title="Delete User"
       />
     </PageContainer>
   );

@@ -51,7 +51,7 @@ export default function PageContainer({
                     <ChevronLeft className="size-5" strokeWidth={2.5} />
                   </Button>
                 )}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col">
                   <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
                   {description && <p className="text-muted-foreground text-sm">{description}</p>}
                 </div>

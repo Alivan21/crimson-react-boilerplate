@@ -1,4 +1,5 @@
 import { Outlet, redirect } from "react-router";
+import { ConfirmDeleteProvider } from "~/components/confirm-delete";
 import { DashboardSidebar } from "~/components/sidebar";
 import { SidebarInset, SidebarProvider } from "~/components/ui/sidebar";
 import { getSession } from "~/libs/cookies";
@@ -19,7 +20,9 @@ export default function ProtectedLayout() {
     <SidebarProvider>
       <DashboardSidebar />
       <SidebarInset>
-        <Outlet />
+        <ConfirmDeleteProvider>
+          <Outlet />
+        </ConfirmDeleteProvider>
       </SidebarInset>
     </SidebarProvider>
   );

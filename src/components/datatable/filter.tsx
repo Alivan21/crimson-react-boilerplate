@@ -92,7 +92,7 @@ export function DataTableFilters<TData>({ filterableColumns }: TDataTableFilters
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button className="h-9 w-full" size="sm" variant="outline">
-          <Filter className="mr-2 h-4 w-4" />
+          <Filter className="mr-1 h-4 w-4" />
           Filter
           {activeFilterCount > 0 && (
             <span className="bg-primary text-primary-foreground ml-1 rounded-full px-1.5 py-0.5 text-xs">
