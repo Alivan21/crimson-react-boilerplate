@@ -12,7 +12,7 @@ import type { Route } from "./+types/root";
 import PermissionGuard from "./components/providers/permission-guard";
 import { SessionProvider } from "./components/providers/sessions";
 import { Button } from "./components/ui/button";
-import TanstackProvider from "./libs/tanstack-query/providers";
+import TanstackQueryProvider from "./libs/tanstack-query/providers";
 import "./app.css";
 
 export function meta() {
@@ -56,12 +56,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <SessionProvider>
-      <TanstackProvider>
+      <TanstackQueryProvider>
         <PermissionGuard>
           <Outlet />
         </PermissionGuard>
         <Toaster position="top-center" />
-      </TanstackProvider>
+      </TanstackQueryProvider>
     </SessionProvider>
   );
 }

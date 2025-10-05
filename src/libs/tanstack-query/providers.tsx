@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "./query-client";
 
-function TanstackProvider({ children }: { children: React.ReactNode }) {
+function TanstackQueryProvider({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
@@ -10,4 +10,4 @@ function TanstackProvider({ children }: { children: React.ReactNode }) {
     </QueryClientProvider>
   );
 }
-export default TanstackProvider;
+export default TanstackQueryProvider;

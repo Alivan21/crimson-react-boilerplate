@@ -92,6 +92,26 @@ export default function Component() {
     },
   ];
 
+  const { queryParams } = useQueryParams();
+  const deleteUserMutation = useDeleteUserMutation();
+
+  const { data, isLoading, isError } = useUsersQuery({
+    ...queryParams,
+    page: queryParams.page,
+    limit: queryParams.limit,
+    search: queryParams.search,
+  });
+
+  function handleConfirmDelete(id: string) {
+    confirmDelete.show({
+      title: "Delete User",
+      description: "Are you sure you want to delete this user? This action cannot be undone.",
+      onConfirm: () => {
+        deleteUserMutation.mutate(id);
+      },
+    });
+  }
+
   const FILTER_CONFIG: FilterableColumn[] = [
     {
       id: "status",
@@ -118,26 +138,6 @@ export default function Component() {
       placeholder: "Filter by Updated At",
     },
   ];
-
-  const { queryParams } = useQueryParams();
-  const deleteUserMutation = useDeleteUserMutation();
-
-  const { data, isLoading, isError } = useUsersQuery({
-    ...queryParams,
-    page: queryParams.page,
-    limit: queryParams.limit,
-    search: queryParams.search,
-  });
-
-  function handleConfirmDelete(id: string) {
-    confirmDelete.show({
-      title: "Delete User",
-      description: "Are you sure you want to delete this user? This action cannot be undone.",
-      onConfirm: () => {
-        deleteUserMutation.mutate(id);
-      },
-    });
-  }
 
   const columns = createUserColumns(handleConfirmDelete);
 
